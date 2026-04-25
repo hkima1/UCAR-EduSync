@@ -1,0 +1,246 @@
+{
+  "query_author_name": "Mohamed Hkima",
+  "generated_at": "2026-04-26T00:31:42",
+  "analysis_scope": "all_returned_authors",
+  "authors_found": [
+    {
+      "id": "https://openalex.org/A5116585898",
+      "display_name": "Mohamed Hkima",
+      "orcid": null,
+      "works_count": 1,
+      "cited_by_count": 1,
+      "last_known_institution": "University of Carthage"
+    },
+    {
+      "id": "https://openalex.org/A5116585789",
+      "display_name": "Mohamed Hkima",
+      "orcid": null,
+      "works_count": 3,
+      "cited_by_count": 1,
+      "last_known_institution": "University of Carthage"
+    }
+  ],
+  "selected_author": {
+    "id": "https://openalex.org/A5116585898",
+    "display_name": "Mohamed Hkima",
+    "orcid": null,
+    "works_count": 1,
+    "cited_by_count": 1,
+    "last_known_institution": "University of Carthage"
+  },
+  "publications": [
+    {
+      "id": "https://openalex.org/W4408326051",
+      "title": "Federated Learning Frameworks: A survey",
+      "publication_year": 2024,
+      "publication_date": "2024-10-22",
+      "type": "article",
+      "doi": "https://doi.org/10.1109/aiccsa63423.2024.10912632",
+      "cited_by_count": 1,
+      "source": null,
+      "openalex_url": "https://openalex.org/W4408326051"
+    },
+    {
+      "id": "https://openalex.org/W4411905924",
+      "title": "A standard-driven framework for blockchain security risk assessment",
+      "publication_year": 2025,
+      "publication_date": "2025-07-01",
+      "type": "article",
+      "doi": "https://doi.org/10.1007/s12083-025-02042-4",
+      "cited_by_count": 1,
+      "source": "Peer-to-Peer Networking and Applications",
+      "openalex_url": "https://openalex.org/W4411905924"
+    },
+    {
+      "id": "https://openalex.org/W4408536619",
+      "title": "A Standard-Driven Framework for BlockchainSecurity Risk Assessment",
+      "publication_year": 2025,
+      "publication_date": "2025-03-17",
+      "type": "preprint",
+      "doi": "https://doi.org/10.21203/rs.3.rs-6194972/v1",
+      "cited_by_count": 0,
+      "source": "Research Square",
+      "openalex_url": "https://openalex.org/W4408536619"
+    },
+    {
+      "id": "https://openalex.org/W4408325760",
+      "title": "A Threat Modeling Approach for Blockchain Security Assessment",
+      "publication_year": 2024,
+      "publication_date": "2024-10-22",
+      "type": "article",
+      "doi": "https://doi.org/10.1109/aiccsa63423.2024.10912624",
+      "cited_by_count": 0,
+      "source": null,
+      "openalex_url": "https://openalex.org/W4408325760"
+    }
+  ],
+  "author_analyses": [
+    {
+      "author": {
+        "id": "https://openalex.org/A5116585898",
+        "display_name": "Mohamed Hkima",
+        "orcid": null,
+        "works_count": 1,
+        "cited_by_count": 1,
+        "last_known_institution": "University of Carthage"
+      },
+      "publications": [
+        {
+          "id": "https://openalex.org/W4408326051",
+          "title": "Federated Learning Frameworks: A survey",
+          "publication_year": 2024,
+          "publication_date": "2024-10-22",
+          "type": "article",
+          "doi": "https://doi.org/10.1109/aiccsa63423.2024.10912632",
+          "cited_by_count": 1,
+          "source": null,
+          "openalex_url": "https://openalex.org/W4408326051"
+        }
+      ],
+      "summary": {
+        "total_publications": 1,
+        "by_year": {
+          "2024": 1
+        },
+        "by_type": {
+          "article": 1
+        },
+        "top_sources": []
+      }
+    },
+    {
+      "author": {
+        "id": "https://openalex.org/A5116585789",
+        "display_name": "Mohamed Hkima",
+        "orcid": null,
+        "works_count": 3,
+        "cited_by_count": 1,
+        "last_known_institution": "University of Carthage"
+      },
+      "publications": [
+        {
+          "id": "https://openalex.org/W4411905924",
+          "title": "A standard-driven framework for blockchain security risk assessment",
+          "publication_year": 2025,
+          "publication_date": "2025-07-01",
+          "type": "article",
+          "doi": "https://doi.org/10.1007/s12083-025-02042-4",
+          "cited_by_count": 1,
+          "source": "Peer-to-Peer Networking and Applications",
+          "openalex_url": "https://openalex.org/W4411905924"
+        },
+        {
+          "id": "https://openalex.org/W4408536619",
+          "title": "A Standard-Driven Framework for BlockchainSecurity Risk Assessment",
+          "publication_year": 2025,
+          "publication_date": "2025-03-17",
+          "type": "preprint",
+          "doi": "https://doi.org/10.21203/rs.3.rs-6194972/v1",
+          "cited_by_count": 0,
+          "source": "Research Square",
+          "openalex_url": "https://openalex.org/W4408536619"
+        },
+        {
+          "id": "https://openalex.org/W4408325760",
+          "title": "A Threat Modeling Approach for Blockchain Security Assessment",
+          "publication_year": 2024,
+          "publication_date": "2024-10-22",
+          "type": "article",
+          "doi": "https://doi.org/10.1109/aiccsa63423.2024.10912624",
+          "cited_by_count": 0,
+          "source": null,
+          "openalex_url": "https://openalex.org/W4408325760"
+        }
+      ],
+      "summary": {
+        "total_publications": 3,
+        "by_year": {
+          "2025": 2,
+          "2024": 1
+        },
+        "by_type": {
+          "article": 2,
+          "preprint": 1
+        },
+        "top_sources": [
+          {
+            "source": "Peer-to-Peer Networking and Applications",
+            "count": 1
+          },
+          {
+            "source": "Research Square",
+            "count": 1
+          }
+        ]
+      }
+    }
+  ],
+  "publications_all": [
+    {
+      "id": "https://openalex.org/W4408326051",
+      "title": "Federated Learning Frameworks: A survey",
+      "publication_year": 2024,
+      "publication_date": "2024-10-22",
+      "type": "article",
+      "doi": "https://doi.org/10.1109/aiccsa63423.2024.10912632",
+      "cited_by_count": 1,
+      "source": null,
+      "openalex_url": "https://openalex.org/W4408326051"
+    },
+    {
+      "id": "https://openalex.org/W4411905924",
+      "title": "A standard-driven framework for blockchain security risk assessment",
+      "publication_year": 2025,
+      "publication_date": "2025-07-01",
+      "type": "article",
+      "doi": "https://doi.org/10.1007/s12083-025-02042-4",
+      "cited_by_count": 1,
+      "source": "Peer-to-Peer Networking and Applications",
+      "openalex_url": "https://openalex.org/W4411905924"
+    },
+    {
+      "id": "https://openalex.org/W4408536619",
+      "title": "A Standard-Driven Framework for BlockchainSecurity Risk Assessment",
+      "publication_year": 2025,
+      "publication_date": "2025-03-17",
+      "type": "preprint",
+      "doi": "https://doi.org/10.21203/rs.3.rs-6194972/v1",
+      "cited_by_count": 0,
+      "source": "Research Square",
+      "openalex_url": "https://openalex.org/W4408536619"
+    },
+    {
+      "id": "https://openalex.org/W4408325760",
+      "title": "A Threat Modeling Approach for Blockchain Security Assessment",
+      "publication_year": 2024,
+      "publication_date": "2024-10-22",
+      "type": "article",
+      "doi": "https://doi.org/10.1109/aiccsa63423.2024.10912624",
+      "cited_by_count": 0,
+      "source": null,
+      "openalex_url": "https://openalex.org/W4408325760"
+    }
+  ],
+  "summary": {
+    "total_publications": 4,
+    "by_year": {
+      "2025": 2,
+      "2024": 2
+    },
+    "by_type": {
+      "article": 3,
+      "preprint": 1
+    },
+    "top_sources": [
+      {
+        "source": "Peer-to-Peer Networking and Applications",
+        "count": 1
+      },
+      {
+        "source": "Research Square",
+        "count": 1
+      }
+    ]
+  },
+  "notes": []
+}
