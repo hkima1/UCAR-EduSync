@@ -8,5 +8,23 @@
     "phone": "0555000444",
     "institution": "Institute B",
     "program": "Chemistry",
-    "enrollment_year": 2022
+    "enrollment_year": 2022,
+    "student_intent": [
+        {
+            "type": "certification_application",
+            "certification_name": "Bioinformatics Specialization",
+            "provider": "UCSD / Coursera",
+            "notes": "Interested in pharmaceutical research",
+            "status": "pending",
+            "timestamp": "2026-04-25T22:32:15.425139Z"
+        }
+    ],
+    "legal_certifications": [
+        {
+            "certification_id": "81ddab98-79ac-49fc-ac2a-1a00e67b3699",
+            "issued_on": "2026-04-26T00:35:08.343565Z",
+            "document_type": "Legal Certification",
+            "qr_code_path": "C:\\Users\\tlili\\OneDrive\\Bureau\\UCAR-EduSync-main\\legal_document_generator_agent\\qr_codes\\B-1002_qr.png"
+        }
+    ]
 }
