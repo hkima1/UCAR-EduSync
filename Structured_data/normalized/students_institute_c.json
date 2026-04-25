@@ -1,0 +1,28 @@
+{
+  "source_file": "C:\\Users\\tlili\\OneDrive\\Bureau\\UCAR-EduSync-main\\Structured_data\\sample_data\\students_institute_c.docx",
+  "students": {
+    "C-77": {
+      "student_id": "C-77",
+      "first_name": "Nour Ait",
+      "last_name": "Ali",
+      "date_of_birth": "2004-12-09",
+      "gender": "F",
+      "email": "nour.aitali@example.com",
+      "institution": "Institute C",
+      "program": "Civil Engineering",
+      "enrollment_year": 2021
+    },
+    "C-78": {
+      "student_id": "C-78",
+      "first_name": "Mehdi",
+      "last_name": "Boudiaf",
+      "date_of_birth": "2003-09-05",
+      "gender": "M",
+      "email": "mehdi.boudiaf@example.com",
+      "institution": "Institute C",
+      "program": "Civil Engineering",
+      "enrollment_year": 2020
+    }
+  },
+  "warnings": []
+}

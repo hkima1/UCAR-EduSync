@@ -1,0 +1,15 @@
+{
+    "student_id": [
+        "A-010",
+        "A-001"
+    ],
+    "first_name": "Aya",
+    "last_name": "Benali",
+    "date_of_birth": "2004-01-13",
+    "gender": "F",
+    "email": "aya.benali@example.com",
+    "phone": "+213555000111",
+    "institution": "Institute A",
+    "program": "Computer Science",
+    "enrollment_year": 2022
+}

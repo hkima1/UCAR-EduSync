@@ -1,0 +1,21 @@
+Analyze ONLY the student record provided in the user message.
+Do NOT search for or include any other student.
+
+Compare that single student's profile with the provided opportunity documents.
+Your objective is to return ONLY high-confidence matches.
+
+High-confidence rule:
+- Keep only recommendations with match_score >= 0.80.
+- Exclude medium or low matches.
+
+Output requirements:
+- Return valid JSON only.
+- recommended_programs must contain only high-confidence matches.
+- If there are no high-confidence matches, return recommended_programs as an empty array and best_match as null.
+
+Allowed categories:
+- PFE (Final Year Project)
+- Summer Internship
+- Research Opportunity
+- Academic Exchange
+- Scholarship Program

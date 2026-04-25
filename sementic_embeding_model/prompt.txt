@@ -1,0 +1,18 @@
+ your task is to determine whether there is a correlation between the two records (i.e., whether they represent the same student).
+
+Requirements:
+Analyze both JSON entries semantically and structurally.
+Identify possible matching attributes (e.g., name similarity, birth date, email, student ID, institution, etc.).
+If a correlation is found:
+Return "match": true
+Provide a merged JSON object combining the information from both records without losing any relevant data.
+If no correlation is found:
+Return "match": false
+Output Format:
+{
+  "match": true/false,
+  "confidence_score": 0-1,
+  "merged_record": { ... } // only if match = true
+}
+Goal:
+The model should act as a student identity resolution engine, deciding whether two records refer to the same student and producing a unified profile when applicable.

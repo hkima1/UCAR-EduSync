@@ -1,0 +1,30 @@
+{
+  "source_file": "C:\\Users\\tlili\\OneDrive\\Bureau\\UCAR-EduSync-main\\Structured_data\\sample_data\\students_institute_b.xlsx",
+  "students": {
+    "B-1001": {
+      "student_id": "B-1001",
+      "first_name": "Sara",
+      "last_name": "Haddad",
+      "date_of_birth": "2005-03-02",
+      "gender": "F",
+      "email": "sara.haddad@example.com",
+      "phone": "0555000333",
+      "institution": "Institute B",
+      "program": "Physics",
+      "enrollment_year": 2023
+    },
+    "B-1002": {
+      "student_id": "B-1002",
+      "first_name": "Omar",
+      "last_name": "Khelifi",
+      "date_of_birth": "2004-02-11",
+      "gender": "M",
+      "email": "omar.khelifi@example.com",
+      "phone": "0555000444",
+      "institution": "Institute B",
+      "program": "Chemistry",
+      "enrollment_year": 2022
+    }
+  },
+  "warnings": []
+}

@@ -1,0 +1,39 @@
+{
+  "student_id": "B-1001",
+  "student_profile": {
+    "first_name": "Sara",
+    "last_name": "Haddad",
+    "date_of_birth": "2005-03-02",
+    "gender": "F",
+    "email": "sara.haddad@example.com",
+    "phone": "0555000333",
+    "institution": "Institute B",
+    "program": "Physics",
+    "enrollment_year": 2023
+  },
+  "recommended_programs": [
+    {
+      "category": "Research Opportunity",
+      "document": "Research_Internship_Mechanics_1.pdf",
+      "title": "Research Internship Mechanics 1",
+      "match_score": 0.95,
+      "reason": "The student is majoring in Physics, and this opportunity focuses on solid mechanics, materials characterization, and constitutive modeling, which are fundamental areas of physics study."
+    },
+    {
+      "category": "Research Opportunity",
+      "document": "Research_Internship_Mechanics_2.pdf",
+      "title": "Research Internship Mechanics 2",
+      "match_score": 0.95,
+      "reason": "The student is majoring in Physics, and this opportunity focuses on dynamics, vibrations, and physics-informed workflows, which align directly with the physics curriculum."
+    }
+  ],
+  "best_match": {
+    "category": "Research Opportunity",
+    "document": "Research_Internship_Mechanics_1.pdf",
+    "title": "Research Internship Mechanics 1",
+    "match_score": 0.95,
+    "reason": "The student is majoring in Physics, and this opportunity focuses on solid mechanics, materials characterization, and constitutive modeling, which are fundamental areas of physics study."
+  },
+  "notes": [],
+  "generated_at": "2026-04-26T00:10:02"
+}

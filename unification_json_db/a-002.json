@@ -1,0 +1,12 @@
+{
+    "student_id": "A-002",
+    "first_name": "Youssef",
+    "last_name": "El Amrani",
+    "date_of_birth": "2003-07-13",
+    "gender": "M",
+    "email": "youssef.amrani@example.com",
+    "phone": "0555000222",
+    "institution": "Institute A",
+    "program": "Mathematics",
+    "enrollment_year": 2021
+}

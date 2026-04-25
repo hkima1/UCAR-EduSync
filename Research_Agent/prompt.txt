@@ -1,0 +1,16 @@
+Accept an author's name as a script argument and search OpenAlex authors using:
+
+https://api.openalex.org/authors?search=<Author Name>
+
+Then select the best (or requested) author match and retrieve publications for that author from OpenAlex works.
+
+Required output:
+- Return JSON containing:
+	- query_author_name
+	- authors_found (list of matched authors)
+	- selected_author
+	- publications (articles/works of selected author)
+	- generated_at
+	- notes
+
+If no author is found, return empty lists with a clear note in notes.
