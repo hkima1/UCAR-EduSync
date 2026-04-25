@@ -1,0 +1,11 @@
+{
+    "student_id": "C-77",
+    "first_name": "Nour Ait",
+    "last_name": "Ali",
+    "date_of_birth": "2004-12-09",
+    "gender": "F",
+    "email": "nour.aitali@example.com",
+    "institution": "Institute C",
+    "program": "Civil Engineering",
+    "enrollment_year": 2021
+}

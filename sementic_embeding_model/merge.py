@@ -4,57 +4,81 @@ import glob
 from pathlib import Path
 import requests
 import difflib
-from openai import OpenAI
 
-# Configuration for NVIDIA NIM using OpenAI Client
-client = OpenAI(
-  base_url="https://integrate.api.nvidia.com/v1",
-  api_key="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"
-)
-MODEL_NAME = "moonshotai/kimi-k2-thinking"
+# Configuration for NVIDIA NIM - google/gemma-4-31b-it
+NVIDIA_API_KEY = "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"
+INVOKE_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
+MODEL_NAME = "google/gemma-4-31b-it"
 
 def call_llm(system_prompt, record1, record2):
     """
-    Sends the two records and the prompt to the LLM and returns the structured JSON response.
+    Sends two student records to the LLM via SSE streaming and returns structured JSON response.
+    Uses google/gemma-4-31b-it with thinking enabled via NVIDIA NIM.
     """
     user_content = (
         f"Record 1:\n{json.dumps(record1, indent=2)}\n\n"
         f"Record 2:\n{json.dumps(record2, indent=2)}"
     )
 
-    try:
-        completion = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_content}
-            ],
-            temperature=1,
-            top_p=0.9,
-            max_tokens=16384,
-            stream=True
-        )
+    headers = {
+        "Authorization": f"Bearer {NVIDIA_API_KEY}",
+        "Accept": "text/event-stream"
+    }
 
-        final_content = ""
-        
-        # We accumulate the content and print the reasoning (if available) as it streams
-        for chunk in completion:
-            if not getattr(chunk, "choices", None):
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content}
+        ],
+        "max_tokens": 16384,
+        "temperature": 1.00,
+        "top_p": 0.95,
+        "stream": True,
+        "chat_template_kwargs": {"enable_thinking": True},
+    }
+
+    final_content = ""
+    try:
+        response = requests.post(INVOKE_URL, headers=headers, json=payload, stream=True, timeout=90)
+        response.raise_for_status()
+
+        # Parse the SSE stream line by line
+        for line in response.iter_lines():
+            if not line:
                 continue
-            
-            # Print reasoning content if it exists
-            reasoning = getattr(chunk.choices[0].delta, "reasoning_content", None)
-            if reasoning:
-                print(reasoning, end="", flush=True)
-                
-            # Accumulate the actual JSON output
-            chunk_content = chunk.choices[0].delta.content
-            if chunk_content:
-                final_content += chunk_content
-                
-        print() # Add a newline after the reasoning stream finishes
-        
-        # Clean the accumulated content and parse it
+            decoded = line.decode("utf-8")
+
+            # SSE lines look like: data: {...} or data: [DONE]
+            if not decoded.startswith("data:"):
+                continue
+            data_str = decoded[5:].strip()
+            if data_str == "[DONE]":
+                break
+
+            try:
+                data = json.loads(data_str)
+                choices = data.get("choices", [])
+                if not choices:
+                    continue
+                delta = choices[0].get("delta", {})
+
+                # Print reasoning if present (thinking tokens)
+                reasoning = delta.get("reasoning_content")
+                if reasoning:
+                    print(reasoning, end="", flush=True)
+
+                # Accumulate actual response content
+                chunk_content = delta.get("content")
+                if chunk_content:
+                    final_content += chunk_content
+
+            except json.JSONDecodeError:
+                continue  # skip malformed SSE chunks
+
+        print()  # Newline after reasoning stream
+
+        # Strip markdown code fences if model wraps JSON in them
         content = final_content.strip()
         if content.startswith("```json"):
             content = content[7:]
@@ -62,15 +86,15 @@ def call_llm(system_prompt, record1, record2):
             content = content[3:]
         if content.endswith("```"):
             content = content[:-3]
-        
+
         return json.loads(content.strip())
+
     except json.JSONDecodeError as e:
         print(f"Error parsing LLM output as JSON: {e}")
         print(f"Raw output: {final_content}")
         return {"match": False, "confidence_score": 0, "error": "JSON decode error"}
     except Exception as e:
         print(f"Error calling LLM: {e}")
-        # Return match false as fallback to avoid crashing or losing data
         return {"match": False, "confidence_score": 0, "error": str(e)}
 
 def load_system_prompt(prompt_path):

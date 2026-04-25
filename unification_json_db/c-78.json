@@ -1,0 +1,11 @@
+{
+    "student_id": "C-78",
+    "first_name": "Mehdi",
+    "last_name": "Boudiaf",
+    "date_of_birth": "2003-09-05",
+    "gender": "M",
+    "email": "mehdi.boudiaf@example.com",
+    "institution": "Institute C",
+    "program": "Civil Engineering",
+    "enrollment_year": 2020
+}
