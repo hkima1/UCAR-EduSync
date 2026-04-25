@@ -1,0 +1,9 @@
+Timestamp: 2026-04-25T18:29:34
+Command: C:\Users\DELL\AppData\Local\Programs\Python\Python313\python.exe -m unittest discover -s tests -p test_*.py -v
+Exit code: 0
+test_end_to_end_sample_extraction_and_normalization (test_normalization.TestStudentNormalization.test_end_to_end_sample_extraction_and_normalization) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.284s
+
+OK
