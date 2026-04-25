@@ -1,0 +1,210 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * UCAR Design System — v5 FINAL
+ * 100% logo-derived blue palette.  No gold, no green, no teal.
+ * Primary: logo blue #3674B5.  Accent ("gold" token): sky blue #78B9EB.
+ * Clean white surfaces.
+ */
+
+@theme inline {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "DM Sans", ui-sans-serif, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-navy: var(--navy);
+  --color-navy-foreground: var(--navy-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  /* ── Surfaces ── */
+  --background: #f7f8fa;
+  --foreground: #1a1f2e;
+  --card: #ffffff;
+  --card-foreground: #1a1f2e;
+  --popover: #ffffff;
+  --popover-foreground: #1a1f2e;
+
+  /* ── Primary — logo blue ── */
+  --primary: #3674B5;
+  --primary-foreground: #ffffff;
+  --navy: #3674B5;
+  --navy-foreground: #ffffff;
+
+  --secondary: #edf1f7;
+  --secondary-foreground: #3674B5;
+
+  --muted: #f0f2f5;
+  --muted-foreground: #6b7a8d;
+
+  /* ── Accent — sky blue (lighter shade from the logo) ── */
+  --accent: #78B9EB;
+  --accent-foreground: #1a3555;
+  /* "gold" token → sky blue so all existing classes keep working */
+  --gold: #78B9EB;
+  --gold-foreground: #1a3555;
+
+  --destructive: #e5484d;
+  --destructive-foreground: #ffffff;
+  --success: #30a46c;
+  --success-foreground: #ffffff;
+  --warning: #e5a100;
+  --warning-foreground: #1a1f2e;
+  --info: #4A90C4;
+  --info-foreground: #ffffff;
+
+  --border: #e2e6ed;
+  --input: #e2e6ed;
+  --ring: #78B9EB;
+
+  --chart-1: #3674B5;
+  --chart-2: #78B9EB;
+  --chart-3: #4A90C4;
+  --chart-4: #30a46c;
+  --chart-5: #e5484d;
+
+  /* ── Sidebar — deeper logo blue ── */
+  --sidebar: #264F8A;
+  --sidebar-foreground: #dfe6f0;
+  --sidebar-primary: #78B9EB;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1d3e6e;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1d3e6e;
+  --sidebar-ring: #78B9EB;
+}
+
+.dark {
+  --background: #111318;
+  --foreground: #e4e7ec;
+  --card: #191c23;
+  --card-foreground: #e4e7ec;
+  --popover: #191c23;
+  --popover-foreground: #e4e7ec;
+  --primary: #78B9EB;
+  --primary-foreground: #0e1b2d;
+  --navy: #78B9EB;
+  --navy-foreground: #0e1b2d;
+  --secondary: #1e222b;
+  --secondary-foreground: #e4e7ec;
+  --muted: #1e222b;
+  --muted-foreground: #8b95a5;
+  --accent: #9ECDF2;
+  --accent-foreground: #0e1b2d;
+  --gold: #9ECDF2;
+  --gold-foreground: #0e1b2d;
+  --destructive: #f87171;
+  --destructive-foreground: #ffffff;
+  --success: #4ade80;
+  --success-foreground: #0e1b2d;
+  --warning: #fbbf24;
+  --warning-foreground: #0e1b2d;
+  --info: #78B9EB;
+  --info-foreground: #0e1b2d;
+  --border: rgba(255,255,255,0.1);
+  --input: rgba(255,255,255,0.12);
+  --ring: #9ECDF2;
+  --chart-1: #78B9EB;
+  --chart-2: #9ECDF2;
+  --chart-3: #4ade80;
+  --chart-4: #f87171;
+  --chart-5: #6b7a8d;
+  --sidebar: #0e1b2d;
+  --sidebar-foreground: #d0d7e2;
+  --sidebar-primary: #9ECDF2;
+  --sidebar-primary-foreground: #0e1b2d;
+  --sidebar-accent: #162440;
+  --sidebar-accent-foreground: #e4e7ec;
+  --sidebar-border: rgba(255,255,255,0.08);
+  --sidebar-ring: #9ECDF2;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+  }
+  h1, h2, h3, h4, h5, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .ucar-grid-bg {
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+  .ucar-gradient-navy {
+    background: linear-gradient(135deg, #3674B5 0%, #264F8A 100%);
+  }
+  .ucar-gradient-gold {
+    background: linear-gradient(135deg, #78B9EB, #4A90C4);
+  }
+  .ucar-text-gradient {
+    background: linear-gradient(135deg, var(--foreground), #78B9EB);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
