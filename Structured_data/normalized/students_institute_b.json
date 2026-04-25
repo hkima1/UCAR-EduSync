@@ -1,5 +1,5 @@
 {
-  "source_file": "C:\\Users\\DELL\\Desktop\\UCAR-EduSync-main\\sample_data\\students_institute_b.xlsx",
+  "source_file": "C:\\Users\\tlili\\OneDrive\\Bureau\\UCAR-EduSync-main\\Structured_data\\sample_data\\students_institute_b.xlsx",
   "students": {
     "B-1001": {
       "student_id": "B-1001",
@@ -10,7 +10,8 @@
       "email": "sara.haddad@example.com",
       "phone": "0555000333",
       "institution": "Institute B",
-      "program": "Physics"
+      "program": "Physics",
+      "enrollment_year": 2023
     },
     "B-1002": {
       "student_id": "B-1002",
@@ -21,7 +22,8 @@
       "email": "omar.khelifi@example.com",
       "phone": "0555000444",
       "institution": "Institute B",
-      "program": "Chemistry"
+      "program": "Chemistry",
+      "enrollment_year": 2022
     }
   },
   "warnings": []
