@@ -9,17 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-<<<<<<< HEAD
-import { Route as TeacherRouteImport } from './routes/teacher'
-import { Route as SuperadminRouteImport } from './routes/superadmin'
-import { Route as StudentRouteImport } from './routes/student'
-=======
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as TeacherRouteImport } from './routes/teacher'
 import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as StudentRouteImport } from './routes/student'
 import { Route as RegisterRouteImport } from './routes/register'
->>>>>>> 3e2ec72 (aa)
 import { Route as DirectorRouteImport } from './routes/director'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -80,14 +74,11 @@ import { Route as AdminEsgRouteImport } from './routes/admin.esg'
 import { Route as AdminDemandsRouteImport } from './routes/admin.demands'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 
-<<<<<<< HEAD
-=======
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
->>>>>>> 3e2ec72 (aa)
 const TeacherRoute = TeacherRouteImport.update({
   id: '/teacher',
   path: '/teacher',
@@ -103,14 +94,11 @@ const StudentRoute = StudentRouteImport.update({
   path: '/student',
   getParentRoute: () => rootRouteImport,
 } as any)
-<<<<<<< HEAD
-=======
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
->>>>>>> 3e2ec72 (aa)
 const DirectorRoute = DirectorRouteImport.update({
   id: '/director',
   path: '/director',
@@ -412,17 +400,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/director': typeof DirectorRouteWithChildren
-<<<<<<< HEAD
-  '/student': typeof StudentRouteWithChildren
-  '/superadmin': typeof SuperadminRouteWithChildren
-  '/teacher': typeof TeacherRouteWithChildren
-=======
   '/register': typeof RegisterRoute
   '/student': typeof StudentRouteWithChildren
   '/superadmin': typeof SuperadminRouteWithChildren
   '/teacher': typeof TeacherRouteWithChildren
   '/verify-email': typeof VerifyEmailRoute
->>>>>>> 3e2ec72 (aa)
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/demands': typeof AdminDemandsRoute
   '/admin/esg': typeof AdminEsgRoute
@@ -482,11 +464,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-<<<<<<< HEAD
-=======
   '/register': typeof RegisterRoute
   '/verify-email': typeof VerifyEmailRoute
->>>>>>> 3e2ec72 (aa)
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/demands': typeof AdminDemandsRoute
   '/admin/esg': typeof AdminEsgRoute
@@ -549,17 +528,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/director': typeof DirectorRouteWithChildren
-<<<<<<< HEAD
-  '/student': typeof StudentRouteWithChildren
-  '/superadmin': typeof SuperadminRouteWithChildren
-  '/teacher': typeof TeacherRouteWithChildren
-=======
   '/register': typeof RegisterRoute
   '/student': typeof StudentRouteWithChildren
   '/superadmin': typeof SuperadminRouteWithChildren
   '/teacher': typeof TeacherRouteWithChildren
   '/verify-email': typeof VerifyEmailRoute
->>>>>>> 3e2ec72 (aa)
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/demands': typeof AdminDemandsRoute
   '/admin/esg': typeof AdminEsgRoute
@@ -623,17 +596,11 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/director'
-<<<<<<< HEAD
-    | '/student'
-    | '/superadmin'
-    | '/teacher'
-=======
     | '/register'
     | '/student'
     | '/superadmin'
     | '/teacher'
     | '/verify-email'
->>>>>>> 3e2ec72 (aa)
     | '/admin/dashboard'
     | '/admin/demands'
     | '/admin/esg'
@@ -693,11 +660,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-<<<<<<< HEAD
-=======
     | '/register'
     | '/verify-email'
->>>>>>> 3e2ec72 (aa)
     | '/admin/dashboard'
     | '/admin/demands'
     | '/admin/esg'
@@ -759,17 +723,11 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/director'
-<<<<<<< HEAD
-    | '/student'
-    | '/superadmin'
-    | '/teacher'
-=======
     | '/register'
     | '/student'
     | '/superadmin'
     | '/teacher'
     | '/verify-email'
->>>>>>> 3e2ec72 (aa)
     | '/admin/dashboard'
     | '/admin/demands'
     | '/admin/esg'
@@ -832,23 +790,15 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   DirectorRoute: typeof DirectorRouteWithChildren
-<<<<<<< HEAD
-  StudentRoute: typeof StudentRouteWithChildren
-  SuperadminRoute: typeof SuperadminRouteWithChildren
-  TeacherRoute: typeof TeacherRouteWithChildren
-=======
   RegisterRoute: typeof RegisterRoute
   StudentRoute: typeof StudentRouteWithChildren
   SuperadminRoute: typeof SuperadminRouteWithChildren
   TeacherRoute: typeof TeacherRouteWithChildren
   VerifyEmailRoute: typeof VerifyEmailRoute
->>>>>>> 3e2ec72 (aa)
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-<<<<<<< HEAD
-=======
     '/verify-email': {
       id: '/verify-email'
       path: '/verify-email'
@@ -856,7 +806,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
->>>>>>> 3e2ec72 (aa)
     '/teacher': {
       id: '/teacher'
       path: '/teacher'
@@ -878,8 +827,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StudentRouteImport
       parentRoute: typeof rootRouteImport
     }
-<<<<<<< HEAD
-=======
     '/register': {
       id: '/register'
       path: '/register'
@@ -887,7 +834,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
->>>>>>> 3e2ec72 (aa)
     '/director': {
       id: '/director'
       path: '/director'
@@ -1466,17 +1412,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   DirectorRoute: DirectorRouteWithChildren,
-<<<<<<< HEAD
-  StudentRoute: StudentRouteWithChildren,
-  SuperadminRoute: SuperadminRouteWithChildren,
-  TeacherRoute: TeacherRouteWithChildren,
-=======
   RegisterRoute: RegisterRoute,
   StudentRoute: StudentRouteWithChildren,
   SuperadminRoute: SuperadminRouteWithChildren,
   TeacherRoute: TeacherRouteWithChildren,
   VerifyEmailRoute: VerifyEmailRoute,
->>>>>>> 3e2ec72 (aa)
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

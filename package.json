@@ -5,10 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-<<<<<<< HEAD
-=======
     "server:dev": "node server/index.cjs",
->>>>>>> 3e2ec72 (aa)
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
@@ -50,15 +47,6 @@
     "@tanstack/react-router": "^1.168.0",
     "@tanstack/react-start": "^1.167.14",
     "@tanstack/router-plugin": "^1.167.10",
-<<<<<<< HEAD
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "cmdk": "^1.1.1",
-    "date-fns": "^4.1.0",
-    "embla-carousel-react": "^8.6.0",
-    "input-otp": "^1.4.2",
-    "lucide-react": "^0.575.0",
-=======
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.9.0",
     "class-variance-authority": "^0.7.1",
@@ -69,11 +57,10 @@
     "dotenv": "^17.4.2",
     "embla-carousel-react": "^8.6.0",
     "express": "^5.2.1",
+    "google-auth-library": "^9.15.1",
     "input-otp": "^1.4.2",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.575.0",
-    "nodemailer": "^8.0.6",
->>>>>>> 3e2ec72 (aa)
     "react": "^19.2.0",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.0",
@@ -85,11 +72,7 @@
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.1",
     "tw-animate-css": "^1.3.4",
-<<<<<<< HEAD
-=======
-    "twilio": "^6.0.0",
     "uuid": "^14.0.0",
->>>>>>> 3e2ec72 (aa)
     "vaul": "^1.1.2",
     "vite-tsconfig-paths": "^6.0.2",
     "zod": "^3.24.2",

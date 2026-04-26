@@ -105,6 +105,20 @@ const NAV: Record<Role, NavItem[]> = {
     { to: "/superadmin/users", label: "Utilisateurs", icon: UserCog },
     { to: "/superadmin/messages", label: "Messages", icon: MessageSquare },
   ],
+  ucar_admin: [
+    { to: "/superadmin/dashboard", label: "Tableau de bord global", icon: Globe2 },
+    { to: "/superadmin/institutions", label: "Établissements", icon: Building2 },
+    { to: "/superadmin/employment-equity", label: "Équité d'emploi", icon: Scale },
+    { to: "/superadmin/coordination", label: "Coordination", icon: Megaphone },
+    { to: "/superadmin/offers", label: "Offres", icon: Tag },
+    { to: "/superadmin/academic", label: "Suivi académique", icon: BookOpen },
+    { to: "/superadmin/strategic", label: "Analyse stratégique", icon: TrendingUp },
+    { to: "/superadmin/financial", label: "Finance", icon: Wallet },
+    { to: "/superadmin/demands", label: "Demandes", icon: Inbox },
+    { to: "/superadmin/predictions", label: "Prédictions", icon: LineChart },
+    { to: "/superadmin/users", label: "Utilisateurs", icon: UserCog },
+    { to: "/superadmin/messages", label: "Messages", icon: MessageSquare },
+  ],
 };
 
 export function Sidebar() {
@@ -223,5 +237,6 @@ export function roleLabel(r: Role) {
     institution_admin: "Admin établissement",
     director: "Directeur",
     super_admin: "UCAR Super Admin",
+    ucar_admin: "UCAR Admin",
   }[r];
 }

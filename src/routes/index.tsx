@@ -1,254 +1,197 @@
-<<<<<<< HEAD
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAuthStore, type Role } from "@/stores/authStore";
-import { authenticateUser, validateTotp, MOCK_USERS } from "@/mock/auth";
-=======
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useAuthStore, type Role } from "@/stores/authStore";
-import { login as apiLogin, verifyOtp as apiVerifyOtp, ApiError } from "@/lib/api";
->>>>>>> 3e2ec72 (aa)
-import { useState, useEffect, useRef } from "react";
-import {
-  Lock,
-  Mail,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  AlertCircle,
-  ArrowRight,
-  KeyRound,
-  Loader2,
-  Info,
-<<<<<<< HEAD
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useCallback } from "react";
+import { ShieldCheck, AlertCircle, Loader2 } from "lucide-react";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001/api";
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "477350247068-1avukeg5pis4qs1hpkpf3cuc31ua9vhl.apps.googleusercontent.com";
 
 export const Route = createFileRoute("/")({
-=======
-  UserPlus,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-
-export const Route = createFileRoute("/")(  {
->>>>>>> 3e2ec72 (aa)
   head: () => ({
     meta: [
       { title: "Connexion — UCAR · Université de Carthage" },
       {
         name: "description",
-        content:
-          "Authentification sécurisée à la plateforme UCAR — Université de Carthage.",
+        content: "Authentification sécurisée à la plateforme UCAR — Université de Carthage.",
       },
     ],
   }),
   component: LoginPage,
 });
 
-type Step = "credentials" | "totp" | "loading";
+// ── Types ─────────────────────────────────────────────────────────────────────
+type GoogleProfile = {
+  google_id: string;
+  email: string;
+  name: string;
+  given_name: string;
+  family_name: string;
+  picture: string;
+};
 
+type Institution = { id: string; institution_name: string };
+
+type Step = "idle" | "loading" | "register" | "pending" | "error";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function routeForRole(role: Role): string {
+  return (
+    {
+      student:          "/student/dashboard",
+      teacher:          "/teacher/dashboard",
+      institution_admin:"/admin/dashboard",
+      director:         "/director/dashboard",
+      super_admin:      "/superadmin/dashboard",
+      ucar_admin:       "/superadmin/dashboard",
+    }[role] ?? "/"
+  );
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 function LoginPage() {
-  const user = useAuthStore((s) => s.user);
-<<<<<<< HEAD
-  const login = useAuthStore((s) => s.login);
-=======
-  const loginToStore = useAuthStore((s) => s.login);
->>>>>>> 3e2ec72 (aa)
-  const navigate = useNavigate();
+  const user       = useAuthStore((s) => s.user);
+  const loginStore = useAuthStore((s) => s.login);
+  const navigate   = useNavigate();
 
-  const [step, setStep] = useState<Step>("credentials");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [totpCode, setTotpCode] = useState(["", "", "", "", "", ""]);
-  const [error, setError] = useState("");
-<<<<<<< HEAD
-  const [pendingUser, setPendingUser] = useState<ReturnType<typeof authenticateUser>>(null);
-  const [showCredentials, setShowCredentials] = useState(false);
-=======
-  const [loading, setLoading] = useState(false);
+  const [step,          setStep]          = useState<Step>("idle");
+  const [error,         setError]         = useState("");
+  const [googleProfile, setGoogleProfile] = useState<GoogleProfile | null>(null);
+  const [institutions,  setInstitutions]  = useState<Institution[]>([]);
+  const [regForm,       setRegForm]       = useState({ institution_id: "", role_name: "student" });
 
-  // API state
-  const [sessionToken, setSessionToken] = useState("");
-  const [devOtpCode, setDevOtpCode] = useState(""); // DEV only: shown in console hint
-  const [userPreview, setUserPreview] = useState<{ name: string; email: string; masked_contact?: string } | null>(null);
->>>>>>> 3e2ec72 (aa)
-
-  const totpRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  // If already logged in, redirect
+  // Redirect if already authenticated
   useEffect(() => {
-    if (user) {
-      navigate({ to: routeForRole(user.role) });
-    }
+    if (user) navigate({ to: routeForRole(user.role) });
   }, [user, navigate]);
 
-  // ── Step 1: Credentials ──
-<<<<<<< HEAD
-  const handleCredentialSubmit = (e: React.FormEvent) => {
-=======
-  const handleCredentialSubmit = async (e: React.FormEvent) => {
->>>>>>> 3e2ec72 (aa)
-    e.preventDefault();
-    setError("");
+  // Load Google Identity Services script
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = initGoogle;
+    document.head.appendChild(script);
+    return () => { document.head.removeChild(script); };
+  }, []);
 
-    if (!email.trim() || !password.trim()) {
-      setError("Veuillez remplir tous les champs.");
-      return;
-    }
+  // Fetch institutions list for registration form
+  useEffect(() => {
+    fetch(`${API_BASE}/institutions`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data && Array.isArray(data.institutions)) setInstitutions(data.institutions);
+        else if (Array.isArray(data)) setInstitutions(data);
+        else setInstitutions([]);
+      })
+      .catch(() => setInstitutions([]));
+  }, []);
 
-<<<<<<< HEAD
-    // Simulate: SELECT * FROM users WHERE email = $1 AND password_hash = crypt($2, password_hash)
-    const matchedUser = authenticateUser(email, password);
-
-    if (!matchedUser) {
-      setError("Email ou mot de passe incorrect.");
-      return;
-    }
-
-    setPendingUser(matchedUser);
-
-    if (matchedUser.totpEnabled) {
-      setStep("totp");
-      setTimeout(() => totpRefs.current[0]?.focus(), 100);
-    } else {
-      completeLogin(matchedUser);
-=======
-    setLoading(true);
-    try {
-      const result = await apiLogin(email, password);
-
-      if (result.requires_otp) {
-        setSessionToken(result.session_token);
-        setDevOtpCode(result.otp_code); // DEV only
-        setUserPreview(result.user_preview);
-        setStep("totp");
-        setTimeout(() => totpRefs.current[0]?.focus(), 100);
-      }
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError("Erreur de connexion au serveur. Vérifiez que le backend est démarré.");
-      }
-    } finally {
-      setLoading(false);
->>>>>>> 3e2ec72 (aa)
-    }
-  };
-
-  // ── Step 2: TOTP ──
-  const handleTotpInput = (index: number, value: string) => {
-    if (!/^\d?$/.test(value)) return;
-    const newCode = [...totpCode];
-    newCode[index] = value;
-    setTotpCode(newCode);
-
-    if (value && index < 5) {
-      totpRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleTotpKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !totpCode[index] && index > 0) {
-      totpRefs.current[index - 1]?.focus();
-    }
-  };
-
-<<<<<<< HEAD
-  const handleTotpSubmit = (e: React.FormEvent) => {
-=======
-  const handleTotpSubmit = async (e: React.FormEvent) => {
->>>>>>> 3e2ec72 (aa)
-    e.preventDefault();
-    setError("");
-
-    const code = totpCode.join("");
-    if (code.length !== 6) {
-      setError("Veuillez saisir le code complet à 6 chiffres.");
-      return;
-    }
-
-<<<<<<< HEAD
-    if (!pendingUser) return;
-
-    // Simulate: SELECT 1 FROM user_totp WHERE user_id = $1 AND code = $2
-    if (!validateTotp(pendingUser.id, code)) {
-      setError("Code de vérification invalide.");
-      setTotpCode(["", "", "", "", "", ""]);
-      totpRefs.current[0]?.focus();
-      return;
-    }
-
-    completeLogin(pendingUser);
-  };
-
-  const completeLogin = (u: NonNullable<typeof pendingUser>) => {
+  // ── Google callback ────────────────────────────────────────────────────────
+  const handleGoogleCredential = useCallback(async (response: { credential: string }) => {
     setStep("loading");
-    // Simulate session creation delay
-    setTimeout(() => {
-      login({
-        id: u.id,
-        name: u.name,
-        role: u.role,
-        institutionId: u.institutionId,
-        institutionName: u.institutionName,
-        avatarInitials: u.avatarInitials,
-        email: u.email,
-      });
-      navigate({ to: routeForRole(u.role) });
-    }, 1200);
-=======
-    setLoading(true);
+    setError("");
+
     try {
-      const result = await apiVerifyOtp(sessionToken, code);
+      const res  = await fetch(`${API_BASE}/auth/google`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ credential: response.credential }),
+      });
+      const data = await res.json();
 
-      // Store JWT tokens
-      localStorage.setItem("ucar-access-token", result.access_token);
-      localStorage.setItem("ucar-refresh-token", result.refresh_token);
+      // ── New user: show registration form ──────────────────────────────
+      if (data.needs_registration) {
+        setGoogleProfile(data.google_profile);
+        setStep("register");
+        return;
+      }
 
-      // Complete login
+      // ── Pending approval ──────────────────────────────────────────────
+      if (!res.ok && data.code === "PENDING_APPROVAL") {
+        setStep("pending");
+        return;
+      }
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error ?? "Erreur d'authentification.");
+      }
+
+      // ── Successful login ──────────────────────────────────────────────
+      localStorage.setItem("ucar-access-token",  data.access_token);
+      localStorage.setItem("ucar-refresh-token", data.refresh_token);
+
       setStep("loading");
       setTimeout(() => {
-        loginToStore({
-          id: result.user.id,
-          name: result.user.name,
-          role: result.user.role as Role,
-          institutionId: result.user.institutionId,
-          institutionName: result.user.institutionName,
-          avatarInitials: result.user.avatarInitials,
-          email: result.user.email,
+        loginStore({
+          id:              data.user.id,
+          name:            data.user.name,
+          email:           data.user.email,
+          role:            data.user.role as Role,
+          institutionId:   data.user.institutionId,
+          institutionName: data.user.institutionName,
+          avatarInitials:  data.user.avatarInitials,
+          picture:         data.user.picture,
         });
-        navigate({ to: routeForRole(result.user.role as Role) });
-      }, 800);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message);
-      } else {
-        setError("Erreur de vérification. Veuillez réessayer.");
-      }
-      setTotpCode(["", "", "", "", "", ""]);
-      totpRefs.current[0]?.focus();
-    } finally {
-      setLoading(false);
+        navigate({ to: routeForRole(data.user.role as Role) });
+      }, 600);
+
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erreur inconnue.");
+      setStep("error");
     }
->>>>>>> 3e2ec72 (aa)
+  }, [loginStore, navigate]);
+
+  // ── Initialize Google Identity Services ───────────────────────────────────
+  function initGoogle() {
+    if (!window.google) return;
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback:  handleGoogleCredential,
+      cancel_on_tap_outside: false,
+    });
+    window.google.accounts.id.renderButton(
+      document.getElementById("google-signin-btn")!,
+      { theme: "filled_blue", size: "large", width: 320, locale: "fr" },
+    );
+    window.google.accounts.id.prompt();
+  }
+
+  // ── Registration submit ───────────────────────────────────────────────────
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!googleProfile || !regForm.institution_id) return;
+    setStep("loading");
+
+    try {
+      const res  = await fetch(`${API_BASE}/auth/google/register`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          google_id:      googleProfile.google_id,
+          email:          googleProfile.email,
+          name:           googleProfile.name,
+          given_name:     googleProfile.given_name,
+          family_name:    googleProfile.family_name,
+          institution_id: regForm.institution_id,
+          role_name:      regForm.role_name,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error);
+      setStep("pending");
+
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Erreur lors de l'inscription.");
+      setStep("error");
+    }
   };
 
-  const goBack = () => {
-    setStep("credentials");
-    setTotpCode(["", "", "", "", "", ""]);
-    setError("");
-<<<<<<< HEAD
-    setPendingUser(null);
-=======
-    setSessionToken("");
-    setUserPreview(null);
-    setDevOtpCode("");
->>>>>>> 3e2ec72 (aa)
-  };
-
+  // ── UI ─────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex">
+
       {/* Left panel — branding */}
       <div className="hidden lg:flex lg:w-[45%] ucar-gradient-navy relative overflow-hidden flex-col justify-between p-10">
         <div className="absolute inset-0 ucar-grid-bg opacity-30" />
@@ -277,40 +220,41 @@ function LoginPage() {
           </h2>
           <p className="mt-4 text-white/60 leading-relaxed">
             Gestion académique, financière et stratégique de plus de 30 établissements.
-            Connexion sécurisée avec authentification à double facteur.
+            Connexion sécurisée via votre compte Google institutionnel.
           </p>
           <div className="mt-8 flex items-center gap-3 text-sm text-white/40">
             <ShieldCheck className="size-5 text-gold" />
-            <span>Connexion chiffrée SSL · 2FA activé · Session sécurisée</span>
+            <span>Connexion chiffrée SSL · Google SSO · Session sécurisée</span>
           </div>
         </div>
 
         <div className="relative z-10 text-xs text-white/30">
-          © Université de Carthage · v2.0
+          © Université de Carthage · v3.0
         </div>
       </div>
 
-      {/* Right panel — login form */}
+      {/* Right panel */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-background">
         <div className="w-full max-w-md">
+
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <div className="rounded-xl bg-white border border-border p-2 shadow-sm">
               <img src="/UCAR_logo.png" alt="UCAR" className="h-10 w-auto object-contain" />
             </div>
             <div>
-              <div className="font-display font-bold text-lg text-foreground">Carthage Connect</div>
+              <div className="font-display font-bold text-lg">Carthage Connect</div>
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Université de Carthage</div>
             </div>
           </div>
 
-          {/* ── STEP: Credentials ── */}
-          {step === "credentials" && (
-            <form onSubmit={handleCredentialSubmit} className="space-y-6">
+          {/* ── IDLE / SIGNIN ── */}
+          {(step === "idle" || step === "error") && (
+            <div className="space-y-6">
               <div>
                 <h1 className="font-display text-2xl font-bold tracking-tight">Connexion</h1>
                 <p className="text-sm text-muted-foreground mt-1.5">
-                  Authentifiez-vous pour accéder à votre espace UCAR.
+                  Utilisez votre compte Google institutionnel UCAR pour vous connecter.
                 </p>
               </div>
 
@@ -321,241 +265,18 @@ function LoginPage() {
                 </div>
               )}
 
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Adresse email institutionnelle</label>
-                  <div className="relative">
-                    <Mail className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="login-email"
-                      type="email"
-                      autoComplete="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="prenom.nom@etablissement.utc.tn"
-                      className="w-full h-11 rounded-lg border border-input bg-card pl-10 pr-3 text-sm outline-none focus:border-navy focus:ring-2 focus:ring-navy/20 transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Mot de passe</label>
-                  <div className="relative">
-                    <Lock className="size-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      id="login-password"
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="current-password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••••"
-                      className="w-full h-11 rounded-lg border border-input bg-card pl-10 pr-10 text-sm outline-none focus:border-navy focus:ring-2 focus:ring-navy/20 transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                    </button>
-                  </div>
-                </div>
+              {/* Google button injected here */}
+              <div className="flex justify-center">
+                <div id="google-signin-btn" />
               </div>
 
-              <button
-                id="login-submit"
-                type="submit"
-<<<<<<< HEAD
-                className="w-full h-11 rounded-lg bg-navy text-white font-medium text-sm flex items-center justify-center gap-2 hover:bg-navy/90 transition-colors active:scale-[0.98]"
-              >
-                Continuer
-                <ArrowRight className="size-4" />
-=======
-                disabled={loading}
-                className="w-full h-11 rounded-lg bg-navy text-white font-medium text-sm flex items-center justify-center gap-2 hover:bg-navy/90 transition-colors active:scale-[0.98] disabled:opacity-60"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" />
-                    Vérification…
-                  </>
-                ) : (
-                  <>
-                    Continuer
-                    <ArrowRight className="size-4" />
-                  </>
-                )}
->>>>>>> 3e2ec72 (aa)
-              </button>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-navy transition-colors"
-                >
-                  Mot de passe oublié ?
-                </button>
-              </div>
-
-<<<<<<< HEAD
-              {/* Demo credentials hint */}
-              <div className="mt-6 border-t border-border pt-5">
-                <button
-                  type="button"
-                  onClick={() => setShowCredentials(!showCredentials)}
-                  className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
-                >
-                  <Info className="size-3.5" />
-                  <span>{showCredentials ? "Masquer" : "Afficher"} les identifiants de démonstration</span>
-                </button>
-
-                {showCredentials && (
-                  <div className="mt-3 space-y-2">
-                    {MOCK_USERS.map((u) => (
-                      <button
-                        type="button"
-                        key={u.id}
-                        onClick={() => { setEmail(u.email); setPassword(u.password); }}
-                        className="w-full text-left p-3 rounded-lg border border-border bg-card hover:border-navy/30 transition-colors group"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="text-xs font-semibold">{u.name}</div>
-                            <div className="text-[10px] text-muted-foreground font-mono">{u.email}</div>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-navy/10 text-navy border border-navy/20 font-medium">
-                              {u.role.replace("_", " ")}
-                            </span>
-                            <div className="text-[10px] text-muted-foreground mt-1 font-mono">2FA: {u.totpSecret}</div>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-=======
-              {/* Registration link */}
-              <div className="border-t border-border pt-5 text-center">
-                <p className="text-sm text-muted-foreground mb-3">Vous n'avez pas de compte ?</p>
-                <Link
-                  to="/register"
-                  className="inline-flex items-center justify-center gap-2 h-10 rounded-lg border border-navy/20 bg-navy/5 text-navy font-medium text-sm px-5 hover:bg-navy/10 transition-colors"
-                >
-                  <UserPlus className="size-4" />
-                  Créer un compte
-                </Link>
->>>>>>> 3e2ec72 (aa)
-              </div>
-            </form>
+              <p className="text-center text-xs text-muted-foreground">
+                En vous connectant, vous acceptez les conditions d'utilisation de la plateforme UCAR.
+              </p>
+            </div>
           )}
 
-          {/* ── STEP: 2FA / TOTP ── */}
-          {step === "totp" && (
-            <form onSubmit={handleTotpSubmit} className="space-y-6">
-              <div>
-                <button
-                  type="button"
-                  onClick={goBack}
-                  className="text-xs text-muted-foreground hover:text-foreground mb-4 flex items-center gap-1"
-                >
-                  ← Retour
-                </button>
-                <div className="size-14 rounded-xl bg-navy/10 flex items-center justify-center mb-4">
-                  <KeyRound className="size-7 text-navy" />
-                </div>
-                <h1 className="font-display text-2xl font-bold tracking-tight">Vérification 2FA</h1>
-                <p className="text-sm text-muted-foreground mt-1.5">
-<<<<<<< HEAD
-                  Saisissez le code à 6 chiffres de votre application d'authentification.
-                </p>
-                {pendingUser && (
-                  <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border text-xs">
-                    <span className="text-muted-foreground">Connecté en tant que :</span>{" "}
-                    <span className="font-semibold">{pendingUser.name}</span>
-                    <span className="text-muted-foreground ml-2">({pendingUser.email})</span>
-=======
-                  Saisissez le code à 6 chiffres envoyé à votre adresse email.
-                </p>
-                {userPreview && (
-                  <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border text-xs">
-                    <span className="text-muted-foreground">Code envoyé à :</span>{" "}
-                    <span className="font-semibold">{userPreview.masked_contact || userPreview.email}</span>
-                  </div>
-                )}
-
-                {/* DEV: Show OTP */}
-                {devOtpCode && (
-                  <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs">
-                    <span className="font-semibold text-amber-700">🔧 DEV — Code OTP :</span>{" "}
-                    <span className="font-mono font-bold text-amber-800 text-sm">{devOtpCode}</span>
->>>>>>> 3e2ec72 (aa)
-                  </div>
-                )}
-              </div>
-
-              {error && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-                  <AlertCircle className="size-4 shrink-0" />
-                  {error}
-                </div>
-              )}
-
-              <div className="flex justify-center gap-3">
-                {totpCode.map((digit, i) => (
-                  <input
-                    key={i}
-                    ref={(el) => { totpRefs.current[i] = el; }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleTotpInput(i, e.target.value)}
-                    onKeyDown={(e) => handleTotpKeyDown(i, e)}
-                    className={cn(
-                      "size-12 rounded-lg border text-center text-lg font-display font-bold outline-none transition-all",
-                      digit
-                        ? "border-navy bg-navy/5 text-navy"
-                        : "border-input bg-card text-foreground focus:border-navy focus:ring-2 focus:ring-navy/20"
-                    )}
-                  />
-                ))}
-              </div>
-
-              <button
-                id="totp-submit"
-                type="submit"
-<<<<<<< HEAD
-                className="w-full h-11 rounded-lg bg-navy text-white font-medium text-sm flex items-center justify-center gap-2 hover:bg-navy/90 transition-colors active:scale-[0.98]"
-              >
-                <ShieldCheck className="size-4" />
-                Vérifier et se connecter
-              </button>
-
-              <div className="text-center text-xs text-muted-foreground">
-                Le code expire dans 30 secondes.
-=======
-                disabled={loading}
-                className="w-full h-11 rounded-lg bg-navy text-white font-medium text-sm flex items-center justify-center gap-2 hover:bg-navy/90 transition-colors active:scale-[0.98] disabled:opacity-60"
-              >
-                {loading ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <>
-                    <ShieldCheck className="size-4" />
-                    Vérifier et se connecter
-                  </>
-                )}
-              </button>
-
-              <div className="text-center text-xs text-muted-foreground">
-                Le code expire dans 5 minutes.
->>>>>>> 3e2ec72 (aa)
-              </div>
-            </form>
-          )}
-
-          {/* ── STEP: Loading ── */}
+          {/* ── LOADING ── */}
           {step === "loading" && (
             <div className="text-center py-12">
               <div className="size-16 rounded-full bg-navy/10 flex items-center justify-center mx-auto mb-5">
@@ -563,27 +284,112 @@ function LoginPage() {
               </div>
               <h2 className="font-display text-xl font-bold">Connexion en cours…</h2>
               <p className="text-sm text-muted-foreground mt-2">
-                Création de la session sécurisée et chargement de votre espace.
+                Vérification de vos identifiants Google.
               </p>
             </div>
           )}
+
+          {/* ── PENDING APPROVAL ── */}
+          {step === "pending" && (
+            <div className="text-center py-12 space-y-4">
+              <div className="size-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
+                <ShieldCheck className="size-8 text-amber-600" />
+              </div>
+              <h2 className="font-display text-xl font-bold">Compte en attente</h2>
+              <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                Votre inscription a été reçue. Un administrateur UCAR doit approuver votre compte avant que vous puissiez vous connecter.
+              </p>
+              <button
+                onClick={() => setStep("idle")}
+                className="text-xs text-navy underline underline-offset-2 hover:opacity-80"
+              >
+                Retour à l'accueil
+              </button>
+            </div>
+          )}
+
+          {/* ── REGISTRATION FORM ── */}
+          {step === "register" && googleProfile && (
+            <form onSubmit={handleRegister} className="space-y-5">
+              <div>
+                <h1 className="font-display text-2xl font-bold tracking-tight">Finaliser l'inscription</h1>
+                <p className="text-sm text-muted-foreground mt-1.5">
+                  Bienvenue <strong>{googleProfile.given_name}</strong> ! Complétez votre profil pour rejoindre la plateforme UCAR.
+                </p>
+              </div>
+
+              {/* Google profile preview */}
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">
+                {googleProfile.picture && (
+                  <img src={googleProfile.picture} alt="" className="size-10 rounded-full object-cover" />
+                )}
+                <div>
+                  <div className="text-sm font-semibold">{googleProfile.name}</div>
+                  <div className="text-xs text-muted-foreground">{googleProfile.email}</div>
+                </div>
+              </div>
+
+              {/* Institution */}
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Établissement</label>
+                <select
+                  required
+                  value={regForm.institution_id}
+                  onChange={(e) => setRegForm((f) => ({ ...f, institution_id: e.target.value }))}
+                  className="w-full h-11 rounded-lg border border-input bg-card px-3 text-sm outline-none focus:border-navy focus:ring-2 focus:ring-navy/20 transition-all"
+                >
+                  <option value="">Sélectionner un établissement…</option>
+                  {(institutions || []).map((i) => (
+                    <option key={i.id} value={i.id}>{i.institution_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Role */}
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Rôle</label>
+                <select
+                  value={regForm.role_name}
+                  onChange={(e) => setRegForm((f) => ({ ...f, role_name: e.target.value }))}
+                  className="w-full h-11 rounded-lg border border-input bg-card px-3 text-sm outline-none focus:border-navy focus:ring-2 focus:ring-navy/20 transition-all"
+                >
+                  <option value="student">Étudiant</option>
+                  <option value="teacher">Enseignant</option>
+                  <option value="institution_admin">Admin établissement</option>
+                  <option value="director">Directeur</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full h-11 rounded-lg bg-navy text-white font-medium text-sm flex items-center justify-center gap-2 hover:bg-navy/90 transition-colors"
+              >
+                Soumettre la demande d'accès
+              </button>
+
+              <p className="text-center text-xs text-muted-foreground">
+                Votre compte sera activé après validation par l'administration UCAR.
+              </p>
+            </form>
+          )}
+
         </div>
       </div>
     </div>
   );
 }
 
-function routeForRole(role: Role): string {
-  return {
-    student: "/student/dashboard",
-    teacher: "/teacher/dashboard",
-    institution_admin: "/admin/dashboard",
-    director: "/director/dashboard",
-    super_admin: "/superadmin/dashboard",
-<<<<<<< HEAD
-  }[role];
-=======
-    ucar_admin: "/superadmin/dashboard",
-  }[role] || "/";
->>>>>>> 3e2ec72 (aa)
+// Extend Window for GIS types
+declare global {
+  interface Window {
+    google: {
+      accounts: {
+        id: {
+          initialize: (config: object) => void;
+          renderButton: (el: HTMLElement, config: object) => void;
+          prompt: () => void;
+        };
+      };
+    };
+  }
 }

@@ -1,379 +1,287 @@
 /**
- * UCAR Auth Routes
- * Handles:
- * - register
- * - verify-email
- * - login (step 1)
- * - verify-otp (step 2)
- * - approve-user
- * - pending-users
+ * UCAR Auth Routes — Google SSO
+ *
+ * Replaces the old email/password + OTP system with
+ * Google Identity Services (One Tap / Sign-in with Google).
+ *
+ * Flow:
+ *   1. Frontend receives a Google credential (JWT) from the GIS library
+ *   2. POST /api/auth/google  →  server verifies the JWT with Google
+ *   3. If user exists + approved → issue UCAR access & refresh tokens
+ *   4. If user is unknown       → return {needs_registration: true}
+ *   5. POST /api/auth/google/register → complete profile & set role
  */
 
-const express = require("express");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { v4: uuidv4 } = require("uuid");
+const express  = require('express');
+const jwt      = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
+const { OAuth2Client } = require('google-auth-library');
 
-const { getDb } = require("../db.cjs");
-const { authenticateToken, requireRole, JWT_SECRET } = require("../middleware/auth.cjs");
-const { sendOtpEmail } = require("../services/email.cjs");
+const { getDb }                              = require('../db.cjs');
+const { authenticateToken, requireRole, JWT_SECRET } = require('../middleware/auth.cjs');
 
 const router = express.Router();
 
+// ── Google Client ID ─────────────────────────────────────────────────────────
+// Set GOOGLE_CLIENT_ID in your .env file
+// Get it from: https://console.cloud.google.com/ → APIs & Services → Credentials
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '477350247068-1avukeg5pis4qs1hpkpf3cuc31ua9vhl.apps.googleusercontent.com';
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+
+// ── Helper: build UCAR token pair ────────────────────────────────────────────
+function issueTokens(user) {
+  const accessToken = jwt.sign(
+    {
+      userId:        user.id,
+      email:         user.email,
+      role:          user.role_name,
+      institutionId: user.institution_id,
+    },
+    JWT_SECRET,
+    { expiresIn: '24h' },
+  );
+
+  const refreshToken = jwt.sign(
+    { userId: user.id, type: 'refresh' },
+    JWT_SECRET,
+    { expiresIn: '7d' },
+  );
+
+  return { accessToken, refreshToken };
+}
+
+// ── Helper: verify Google credential ─────────────────────────────────────────
+async function verifyGoogleToken(credential) {
+  const ticket = await googleClient.verifyIdToken({
+    idToken:  credential,
+    audience: GOOGLE_CLIENT_ID,
+  });
+  return ticket.getPayload(); // { sub, email, name, given_name, family_name, picture }
+}
+
 /* ==========================================================
-   REGISTER
+   POST /api/auth/google
+   Verify Google token → login or signal new user
 ========================================================== */
-router.post("/register", (req, res) => {
+router.post('/google', async (req, res) => {
   try {
-    const {
-      username, nom, prenom, email,
-      telephone, password, institution_id, role_name,
-    } = req.body;
+    const { credential } = req.body;
+    if (!credential) {
+      return res.status(400).json({ error: 'Google credential manquant.' });
+    }
 
-    if (!username || !nom || !prenom || !email || !telephone || !password || !institution_id) {
-      return res.status(400).json({
-        error: "Tous les champs sont obligatoires, y compris le numéro de téléphone.",
+    let payload;
+    try {
+      payload = await verifyGoogleToken(credential);
+    } catch {
+      return res.status(401).json({ error: 'Token Google invalide ou expiré.' });
+    }
+
+    const { sub: googleId, email, name, given_name, family_name, picture } = payload;
+    const db = getDb();
+
+    // Look for existing user by google_id or email
+    const user = db.prepare(`
+      SELECT u.id, u.email, u.nom, u.prenom, u.google_id,
+             u.institution_id, u.approval_status,
+             r.role_name, i.institution_name
+      FROM users u
+      JOIN roles r ON r.id = u.role_id
+      JOIN institutions i ON i.id = u.institution_id
+      WHERE u.google_id = ? OR LOWER(u.email) = LOWER(?)
+    `).get(googleId, email);
+
+    // ── Case 1: User exists ───────────────────────────────────────────────
+    if (user) {
+      // Link google_id if signing in via email match for the first time
+      if (!user.google_id) {
+        db.prepare('UPDATE users SET google_id = ? WHERE id = ?').run(googleId, user.id);
+      }
+
+      if (user.approval_status === 'pending') {
+        return res.status(403).json({
+          error: "Votre compte est en attente d'approbation par l'administration.",
+          code:  'PENDING_APPROVAL',
+        });
+      }
+      if (user.approval_status === 'rejected') {
+        return res.status(403).json({ error: 'Compte refusé.', code: 'REJECTED' });
+      }
+
+      const { accessToken, refreshToken } = issueTokens(user);
+      const avatarInitials = `${(user.prenom || given_name || 'U')[0]}${(user.nom || family_name || 'C')[0]}`.toUpperCase();
+
+      console.log(`[Auth] ✅ Google login: ${email}`);
+      return res.json({
+        success:       true,
+        access_token:  accessToken,
+        refresh_token: refreshToken,
+        user: {
+          id:              user.id,
+          name:            `${user.prenom} ${user.nom}`,
+          email:           user.email,
+          role:            user.role_name,
+          institutionId:   user.institution_id,
+          institutionName: user.institution_name,
+          avatarInitials,
+          picture,
+        },
       });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: "Format d'email invalide." });
-    }
+    // ── Case 2: New user — needs to complete registration ─────────────────
+    console.log(`[Auth] 🆕 Unknown Google user: ${email} — needs registration`);
+    return res.status(200).json({
+      success:           false,
+      needs_registration: true,
+      google_profile: {
+        google_id:   googleId,
+        email,
+        name,
+        given_name,
+        family_name,
+        picture,
+      },
+    });
 
-    // Validate E.164 phone format
-    const phoneRegex = /^\+\d{8,15}$/;
-    if (!phoneRegex.test(telephone)) {
-      return res.status(400).json({
-        error: "Numéro de téléphone invalide. Utilisez le format international (+216XXXXXXXX).",
-      });
-    }
+  } catch (err) {
+    console.error('[Auth] Google login error:', err);
+    return res.status(500).json({ error: 'Erreur interne du serveur.' });
+  }
+});
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
-    if (!passwordRegex.test(password)) {
-      return res.status(400).json({
-        error: "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.",
-      });
+/* ==========================================================
+   POST /api/auth/google/register
+   Complete registration for a new Google-authenticated user.
+   Body: { google_id, email, given_name, family_name, institution_id, role_name }
+========================================================== */
+router.post('/google/register', async (req, res) => {
+  try {
+    const { google_id, email, institution_id, role_name } = req.body;
+    let { given_name, family_name, name: fullName } = req.body;
+
+    // Gracefully derive names if Google didn't split them
+    if (!given_name && !family_name && fullName) {
+      const parts = fullName.trim().split(' ');
+      given_name  = parts[0];
+      family_name = parts.slice(1).join(' ') || parts[0]; // fallback to same if single name
+    } else if (!given_name)  { given_name  = family_name || 'Utilisateur'; }
+      else if (!family_name) { family_name = given_name; }
+
+    if (!google_id || !email || !institution_id) {
+      return res.status(400).json({ error: 'Tous les champs sont obligatoires.' });
     }
 
     const db = getDb();
 
-    const existingUser = db
-      .prepare("SELECT id FROM users WHERE LOWER(email)=LOWER(?) OR LOWER(username)=LOWER(?)")
-      .get(email, username);
-
-    if (existingUser) {
-      return res.status(409).json({ error: "Cet email ou nom d'utilisateur est déjà utilisé." });
+    // Guard: already registered?
+    const existing = db.prepare('SELECT id FROM users WHERE google_id = ? OR LOWER(email) = LOWER(?)').get(google_id, email);
+    if (existing) {
+      return res.status(409).json({ error: 'Ce compte Google est déjà enregistré.' });
     }
 
-    const institution = db
-      .prepare("SELECT id FROM institutions WHERE id = ?")
-      .get(institution_id);
-
+    const institution = db.prepare('SELECT id FROM institutions WHERE id = ?').get(institution_id);
     if (!institution) {
-      return res.status(400).json({ error: "Institution non trouvée." });
+      return res.status(400).json({ error: 'Institution non trouvée.' });
     }
 
-    const requestedRole = role_name || "student";
-    const role = db.prepare("SELECT id FROM roles WHERE role_name = ?").get(requestedRole);
-
+    const requestedRole = role_name || 'student';
+    const role = db.prepare('SELECT id FROM roles WHERE role_name = ?').get(requestedRole);
     if (!role) {
-      return res.status(400).json({ error: "Rôle invalide." });
+      return res.status(400).json({ error: 'Rôle invalide.' });
     }
 
-    const passwordHash = bcrypt.hashSync(password, 10);
-    const userId = uuidv4();
+    const userId   = uuidv4();
+    const username = `${given_name.toLowerCase()}.${family_name.toLowerCase()}.${userId.slice(0, 4)}`;
 
     db.prepare(`
       INSERT INTO users (
-        id, username, nom, prenom, email, telephone,
-        password_hash, institution_id, role_id,
+        id, username, nom, prenom, email, google_id,
+        institution_id, role_id,
         email_verified, approval_status
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending')
-    `).run(
-      userId,
-      username.toLowerCase(),
-      nom,
-      prenom,
-      email.toLowerCase(),
-      telephone,
-      passwordHash,
-      institution_id,
-      role.id,
-    );
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'pending')
+    `).run(userId, username, family_name, given_name, email.toLowerCase(), google_id, institution_id, role.id);
 
-    const verificationToken = uuidv4();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-    db.prepare(`
-      INSERT INTO email_verification_tokens (id, user_id, token, expires_at)
-      VALUES (?, ?, ?, ?)
-    `).run(uuidv4(), userId, verificationToken, expiresAt);
-
-    const verificationUrl = `http://localhost:5173/verify-email?token=${verificationToken}`;
-    console.log("📧 Verification URL:", verificationUrl);
+    console.log(`[Auth] ✅ Registered new user via Google: ${email} (pending approval)`);
 
     return res.status(201).json({
-      message: "Inscription réussie ! Veuillez vérifier votre email pour activer votre compte.",
-      verification_url: verificationUrl, // Remove in production
-      user_id: userId,
+      success: true,
+      message: "Inscription réussie. Votre compte est en attente d'approbation.",
     });
+
   } catch (err) {
-    console.error("Register error:", err);
-    return res.status(500).json({ error: "Erreur interne du serveur." });
+    console.error('[Auth] Google register error:', err);
+    return res.status(500).json({ error: 'Erreur interne du serveur.' });
   }
 });
 
 /* ==========================================================
-   VERIFY EMAIL
+   GET /api/auth/me   — return current user from JWT
 ========================================================== */
-router.get("/verify-email", (req, res) => {
-  try {
-    const { token } = req.query;
+router.get('/me', authenticateToken, (req, res) => {
+  const db   = getDb();
+  const user = db.prepare(`
+    SELECT u.id, u.email, u.nom, u.prenom, u.institution_id,
+           r.role_name, i.institution_name
+    FROM users u
+    JOIN roles r ON r.id = u.role_id
+    JOIN institutions i ON i.id = u.institution_id
+    WHERE u.id = ?
+  `).get(req.user.userId);
 
-    if (!token) {
-      return res.status(400).json({ error: "Token manquant." });
-    }
+  if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé.' });
 
-    const db = getDb();
-
-    const record = db.prepare(`
-      SELECT evt.user_id, evt.expires_at, u.email_verified
-      FROM email_verification_tokens evt
-      JOIN users u ON u.id = evt.user_id
-      WHERE evt.token = ?
-    `).get(token);
-
-    if (!record) {
-      return res.status(400).json({ error: "Token invalide." });
-    }
-
-    if (record.email_verified) {
-      return res.json({ message: "Email déjà vérifié." });
-    }
-
-    if (new Date(record.expires_at) < new Date()) {
-      return res.status(400).json({ error: "Le token a expiré." });
-    }
-
-    db.prepare("UPDATE users SET email_verified = 1 WHERE id = ?").run(record.user_id);
-    db.prepare("DELETE FROM email_verification_tokens WHERE user_id = ?").run(record.user_id);
-
-    return res.json({
-      message: "Email vérifié avec succès ! Votre compte est en attente d'approbation.",
-    });
-  } catch (err) {
-    console.error("Verify email error:", err);
-    return res.status(500).json({ error: "Erreur interne du serveur." });
-  }
+  const avatarInitials = `${user.prenom[0]}${user.nom[0]}`.toUpperCase();
+  return res.json({
+    id:              user.id,
+    name:            `${user.prenom} ${user.nom}`,
+    email:           user.email,
+    role:            user.role_name,
+    institutionId:   user.institution_id,
+    institutionName: user.institution_name,
+    avatarInitials,
+  });
 });
 
 /* ==========================================================
-   LOGIN — STEP 1: CREDENTIALS
+   POST /api/auth/logout — stateless; just a signal for the client
 ========================================================== */
-router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email et mot de passe requis." });
-    }
-
-    const db = getDb();
-
-    const user = db.prepare(`
-      SELECT
-        u.id, u.username, u.nom, u.prenom, u.email,
-        u.telephone, u.password_hash,
-        u.institution_id, u.email_verified,
-        u.approval_status,
-        r.role_name,
-        i.institution_name
-      FROM users u
-      JOIN roles r ON r.id = u.role_id
-      JOIN institutions i ON i.id = u.institution_id
-      WHERE LOWER(u.email) = LOWER(?)
-    `).get(email);
-
-    if (!user) {
-      return res.status(401).json({ error: "Email ou mot de passe incorrect." });
-    }
-
-    if (!bcrypt.compareSync(password, user.password_hash)) {
-      return res.status(401).json({ error: "Email ou mot de passe incorrect." });
-    }
-
-    if (!user.email_verified) {
-      return res.status(403).json({
-        error: "Veuillez vérifier votre email.",
-        code: "EMAIL_NOT_VERIFIED",
-      });
-    }
-
-    if (user.approval_status === "pending") {
-      return res.status(403).json({
-        error: "Compte en attente d'approbation.",
-        code: "PENDING_APPROVAL",
-      });
-    }
-
-    if (user.approval_status === "rejected") {
-      return res.status(403).json({
-        error: "Compte refusé.",
-        code: "REJECTED",
-      });
-    }
-
-    if (!user.telephone) {
-      return res.status(400).json({
-        error: "Numéro de téléphone manquant. Contactez l'administration.",
-        code: "NO_PHONE",
-      });
-    }
-
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-
-    // Invalidate previous OTPs
-    db.prepare("UPDATE otp_codes SET used = 1 WHERE user_id = ? AND used = 0").run(user.id);
-
-    // Store new OTP
-    db.prepare(`
-      INSERT INTO otp_codes (id, user_id, code, expires_at, used)
-      VALUES (?, ?, ?, ?, 0)
-    `).run(uuidv4(), user.id, otpCode, expiresAt);
-
-    // Send Email — graceful failure
-    try {
-      await sendOtpEmail(user.email, otpCode);
-    } catch (emailError) {
-      console.error("Email send failed:", emailError.message);
-      return res.status(500).json({
-        error: "Impossible d'envoyer l'email. Veuillez réessayer plus tard.",
-      });
-    }
-
-    const sessionToken = jwt.sign(
-      { userId: user.id, step: "otp_pending" },
-      JWT_SECRET,
-      { expiresIn: "10m" },
-    );
-
-    // FIX: mask email for preview
-    const [localPart, domain] = user.email.split('@');
-    const maskedEmail = localPart[0] + '*'.repeat(Math.max(1, localPart.length - 1)) + '@' + domain;
-
-    return res.json({
-      requires_otp: true,
-      session_token: sessionToken,
-      user_preview: {
-        name: `${user.prenom} ${user.nom}`,
-        email: user.email,
-        phone: user.telephone, // still send telephone for completeness if needed, or remove
-        masked_contact: maskedEmail, // changed preview field
-      },
-    });
-  } catch (err) {
-    console.error("Login error:", err);
-    return res.status(500).json({ error: "Erreur interne du serveur." });
-  }
+router.post('/logout', (req, res) => {
+  return res.json({ success: true, message: 'Déconnecté.' });
 });
 
 /* ==========================================================
-   LOGIN — STEP 2: VERIFY OTP
+   Admin: GET /api/auth/pending-users
 ========================================================== */
-router.post("/verify-otp", (req, res) => {
-  try {
-    const { session_token, otp_code } = req.body;
+router.get('/pending-users', authenticateToken, requireRole('ucar_admin'), (req, res) => {
+  const db    = getDb();
+  const users = db.prepare(`
+    SELECT u.id, u.prenom, u.nom, u.email, u.created_at,
+           r.role_name, i.institution_name
+    FROM users u
+    JOIN roles r ON r.id = u.role_id
+    JOIN institutions i ON i.id = u.institution_id
+    WHERE u.approval_status = 'pending'
+    ORDER BY u.created_at ASC
+  `).all();
+  return res.json({ pending: users });
+});
 
-    if (!session_token || !otp_code) {
-      return res.status(400).json({ error: "Session et OTP requis." });
-    }
-
-    let decoded;
-    try {
-      decoded = jwt.verify(session_token, JWT_SECRET);
-    } catch {
-      return res.status(401).json({ error: "Session expirée. Veuillez vous reconnecter." });
-    }
-
-    if (decoded.step !== "otp_pending") {
-      return res.status(400).json({ error: "Session invalide." });
-    }
-
-    const db = getDb();
-
-    const otp = db.prepare(`
-      SELECT id FROM otp_codes
-      WHERE user_id = ?
-        AND code = ?
-        AND used = 0
-        AND expires_at > datetime('now')
-      ORDER BY expires_at DESC
-      LIMIT 1
-    `).get(decoded.userId, otp_code.trim());
-
-    if (!otp) {
-      return res.status(401).json({ error: "OTP invalide ou expiré." });
-    }
-
-    db.prepare("UPDATE otp_codes SET used = 1 WHERE id = ?").run(otp.id);
-
-    const user = db.prepare(`
-      SELECT
-        u.id, u.email, u.nom, u.prenom,
-        u.institution_id,
-        r.role_name,
-        i.institution_name
-      FROM users u
-      JOIN roles r ON r.id = u.role_id
-      JOIN institutions i ON i.id = u.institution_id
-      WHERE u.id = ?
-    `).get(decoded.userId);
-
-    // Guard: user deleted between steps
-    if (!user) {
-      return res.status(404).json({ error: "Utilisateur non trouvé." });
-    }
-
-    const accessToken = jwt.sign(
-      {
-        userId: user.id,
-        email: user.email,
-        role: user.role_name,
-        institutionId: user.institution_id,
-      },
-      JWT_SECRET,
-      { expiresIn: "24h" },
-    );
-
-    const refreshToken = jwt.sign(
-      { userId: user.id, type: "refresh" },
-      JWT_SECRET,
-      { expiresIn: "7d" },
-    );
-
-    const avatarInitials = `${user.prenom[0]}${user.nom[0]}`.toUpperCase();
-
-    return res.json({
-      message: "Connexion réussie.",
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      user: {
-        id: user.id,
-        name: `${user.prenom} ${user.nom}`,
-        email: user.email,
-        role: user.role_name,
-        institutionId: user.institution_id,
-        institutionName: user.institution_name,
-        avatarInitials,
-      },
-    });
-  } catch (err) {
-    console.error("OTP verify error:", err);
-    return res.status(500).json({ error: "Erreur interne du serveur." });
+/* ==========================================================
+   Admin: POST /api/auth/approve-user
+========================================================== */
+router.post('/approve-user', authenticateToken, requireRole('ucar_admin'), (req, res) => {
+  const { user_id, action } = req.body; // action: 'approved' | 'rejected'
+  if (!user_id || !['approved', 'rejected'].includes(action)) {
+    return res.status(400).json({ error: 'user_id et action (approved|rejected) requis.' });
   }
+
+  const db = getDb();
+  db.prepare('UPDATE users SET approval_status = ?, approved_by = ? WHERE id = ?')
+    .run(action, req.user.userId, user_id);
+
+  return res.json({ success: true, message: `Compte ${action}.` });
 });
 
 module.exports = router;

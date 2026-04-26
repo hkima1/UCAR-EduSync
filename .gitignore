@@ -16,12 +16,6 @@ dist-ssr
 .nitro
 *.local
 
-<<<<<<< HEAD
-=======
-# Local SQLite database
-server/*.db
-
->>>>>>> 3e2ec72 (aa)
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
@@ -36,3 +30,14 @@ server/*.db
 *.njsproj
 *.sln
 *.sw?
+
+# ── Secrets — NEVER commit these ───────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+client_secret_*.json
+
+# Local SQLite database
+server/*.db
+server/*.db-shm
+server/*.db-wal

@@ -187,24 +187,21 @@ export const esgData = {
   ],
 };
 
-<<<<<<< HEAD
-=======
-export const esgMetrics: Record<string, any> = {
+export const esgMetrics: Record<string, { carbonFootprint: number; energyConsumption: number; wasteRecycledPercentage: number; waterUsage: number }> = {
   insat: {
     carbonFootprint: 18.4,
     energyConsumption: 48200,
     wasteRecycledPercentage: 34,
-    waterUsage: 1200
+    waterUsage: 1200,
   },
   enit: {
     carbonFootprint: 22.1,
     energyConsumption: 51000,
     wasteRecycledPercentage: 40,
-    waterUsage: 1500
-  }
+    waterUsage: 1500,
+  },
 };
 
->>>>>>> 3e2ec72 (aa)
 // University-wide financial summary for super admin
 export const universityFinancials = [
   { institutionId: "enit", name: "ENIT", allocated: 2800000, consumed: 2156000, executionRate: 77, status: "on track" },

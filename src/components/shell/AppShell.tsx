@@ -13,27 +13,21 @@ const LIVE_NOTIFS = [
   { type: "report" as const, priority: "info" as const, title: "Rapport généré", body: "Synthèse hebdomadaire prête." },
 ];
 
-function roleFromPath(pathname: string): Role | null {
-  if (pathname.startsWith("/student")) return "student";
-  if (pathname.startsWith("/teacher")) return "teacher";
-  if (pathname.startsWith("/admin")) return "institution_admin";
-  if (pathname.startsWith("/director")) return "director";
-  if (pathname.startsWith("/superadmin")) return "super_admin";
+function allowedRolesFromPath(pathname: string): Role[] | null {
+  if (pathname.startsWith("/student")) return ["student"];
+  if (pathname.startsWith("/teacher")) return ["teacher"];
+  if (pathname.startsWith("/admin")) return ["institution_admin"];
+  if (pathname.startsWith("/director")) return ["director"];
+  if (pathname.startsWith("/superadmin")) return ["super_admin", "ucar_admin"];
   return null;
 }
 
 export function AppShell() {
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
-  const loginAs = useAuthStore((s) => s.loginAs);
   const add = useNotificationStore((s) => s.add);
-  const expectedRole = roleFromPath(location.pathname);
+  const allowedRoles = allowedRolesFromPath(location.pathname);
 
-  useEffect(() => {
-    if (expectedRole && user?.role !== expectedRole) {
-      loginAs(expectedRole);
-    }
-  }, [expectedRole, loginAs, user?.role]);
 
   useEffect(() => {
     if (!user) return;
@@ -44,12 +38,8 @@ export function AppShell() {
     return () => clearInterval(id);
   }, [user, add]);
 
-  if (expectedRole && user?.role !== expectedRole) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
-        Chargement de l'espace...
-      </div>
-    );
+  if (allowedRoles && !allowedRoles.includes(user?.role as Role)) {
+    return <Navigate to="/" />;
   }
 
   if (!user) return <Navigate to="/" />;

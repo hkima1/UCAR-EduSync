@@ -42,11 +42,12 @@ function migrate(db) {
       nom TEXT NOT NULL,
       prenom TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
-      password_hash TEXT NOT NULL,
+      google_id TEXT UNIQUE,
+      password_hash TEXT,
       telephone TEXT,
       institution_id TEXT NOT NULL,
       role_id TEXT NOT NULL,
-      email_verified INTEGER DEFAULT 0,
+      email_verified INTEGER DEFAULT 1,
       approval_status TEXT DEFAULT 'pending' CHECK(approval_status IN ('pending','approved','rejected')),
       approved_by TEXT,
       created_at TEXT DEFAULT (datetime('now')),
@@ -69,25 +70,14 @@ function migrate(db) {
       FOREIGN KEY (user_id) REFERENCES users(id),
       FOREIGN KEY (profile_category_id) REFERENCES profile_categories(id)
     );
-
-    CREATE TABLE IF NOT EXISTS otp_codes (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL,
-      code TEXT NOT NULL,
-      expires_at TEXT NOT NULL,
-      used INTEGER DEFAULT 0,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    );
-
-    CREATE TABLE IF NOT EXISTS email_verification_tokens (
-      id TEXT PRIMARY KEY,
-      user_id TEXT NOT NULL UNIQUE,
-      token TEXT NOT NULL UNIQUE,
-      expires_at TEXT NOT NULL,
-      FOREIGN KEY (user_id) REFERENCES users(id)
-    );
   `);
 
+  // ── Live migration: add google_id column if it doesn't exist yet ──────────
+  const cols = db.pragma('table_info(users)').map(c => c.name);
+  if (!cols.includes('google_id')) {
+    db.exec(`ALTER TABLE users ADD COLUMN google_id TEXT UNIQUE;`);
+    console.log('✓ Migrated: added google_id column to users');
+  }
   // ── Seed data ──────────────────────────────────────────────────
 
   const roleCount = db.prepare('SELECT COUNT(*) as c FROM roles').get().c;
@@ -154,7 +144,7 @@ function migrate(db) {
       db.prepare(`
         INSERT INTO users (id, username, nom, prenom, email, password_hash, telephone, institution_id, role_id, email_verified, approval_status)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'approved')
-      `).run(adminId, 'admin.ucar', 'Marzouki', 'Faouzi', 'f.marzouki@ucar.tn', passwordHash, '25686005', ucarInst.id, ucarAdminRole.id);
+      `).run(adminId, 'solaymen.tlili', 'Tlili', 'Solaymen', 'solaymen.tlili@enstab.ucar.tn', passwordHash, '', ucarInst.id, ucarAdminRole.id);
 
       // Create profile for admin
       const staffCat = db.prepare("SELECT id FROM profile_categories WHERE category_name = 'staff'").get();
@@ -162,7 +152,7 @@ function migrate(db) {
         db.prepare('INSERT INTO profiles (id, user_id, nom, prenom, profile_category_id) VALUES (?, ?, ?, ?, ?)')
           .run(uuidv4(), adminId, 'Marzouki', 'Faouzi', staffCat.id);
       }
-      console.log('✓ Seeded default UCAR admin (f.marzouki@ucar.tn / Admin@2025)');
+      console.log('✓ Seeded default UCAR admin (solaymen.tlili@enstab.ucar.tn)');
     }
   }
 }
