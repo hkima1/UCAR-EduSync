@@ -245,20 +245,17 @@ def research_health() -> Any:
 # ---- Mount existing Flask agent apps --------------------------------------
 mounts: dict[str, Any] = {}
 
-if academic_mod is not None and hasattr(academic_mod, "app"):
-    mounts["/agents/academic"] = academic_mod.app
+def mount_flask_app(path: str, mod: Any):
+    if mod is not None and hasattr(mod, "app"):
+        if CORS:
+            CORS(mod.app)
+        mounts[path] = mod.app
 
-if strategic_mod is not None and hasattr(strategic_mod, "app"):
-    mounts["/agents/strategic"] = strategic_mod.app
-
-if employment_mod is not None and hasattr(employment_mod, "app"):
-    mounts["/agents/employment"] = employment_mod.app
-
-if legal_mod is not None and hasattr(legal_mod, "app"):
-    mounts["/agents/legal"] = legal_mod.app
-
-if environment_mod is not None and hasattr(environment_mod, "app"):
-    mounts["/agents/environment"] = environment_mod.app
+mount_flask_app("/agents/academic", academic_mod)
+mount_flask_app("/agents/strategic", strategic_mod)
+mount_flask_app("/agents/employment", employment_mod)
+mount_flask_app("/agents/legal", legal_mod)
+mount_flask_app("/agents/environment", environment_mod)
 
 
 # Export a unified WSGI application.
