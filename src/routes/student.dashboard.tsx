@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { PageHeader, StatCard, Section } from "@/components/ui/page-primitives";
 import {
@@ -19,9 +20,12 @@ import {
   Tooltip,
   ReferenceLine,
 } from "recharts";
-import { Calendar, FileText, MessagesSquare, Sparkles, BookOpen } from "lucide-react";
+import { Calendar, FileText, MessagesSquare, Sparkles, BookOpen, Bot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUIStore } from "@/stores/uiStore";
+import { useAgentTask } from "@/hooks/useAgentTask";
+import { useAcademicAdvisorAPI } from "@/hooks/useAcademicAdvisorAPI";
+import ReactMarkdown from "react-markdown";
 
 export const Route = createFileRoute("/student/dashboard")({
   head: () => ({
@@ -36,6 +40,38 @@ export const Route = createFileRoute("/student/dashboard")({
 function StudentDashboard() {
   const user = useAuthStore((s) => s.user);
   const openCopilot = useUIStore((s) => s.openCopilot);
+  const openAgents = useUIStore((s) => s.openAgents);
+  const { submitTask } = useAgentTask();
+  const { adviseAsMarkdown } = useAcademicAdvisorAPI();
+  const [advisorLoading, setAdvisorLoading] = useState(false);
+  const [advisorError, setAdvisorError] = useState<string | null>(null);
+  const [advisorOutput, setAdvisorOutput] = useState<string>("");
+
+  const handleAdvisorTask = async () => {
+    setAdvisorLoading(true);
+    setAdvisorError(null);
+    openAgents();
+
+    await submitTask({
+      type: "analytics_agent",
+      description: "Conseil académique personnalisé (Academic Advisor Agent)",
+      payload: { source: "academic_advisor_agent", studentId: currentStudent.id },
+      externalRun: async () => {
+        try {
+          const output = await adviseAsMarkdown(currentStudent.id);
+          setAdvisorOutput(output);
+          return output;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Erreur inconnue";
+          setAdvisorError(message);
+          throw error;
+        }
+      },
+    });
+
+    setAdvisorLoading(false);
+  };
+
   if (!user) return null;
   const institution = getInstitution(currentStudent.institutionId);
   const recentGrades = studentGrades.slice(0, 5);
@@ -66,8 +102,33 @@ function StudentDashboard() {
             <Sparkles className="size-4 mr-2" />
             Demander à l'IA
           </Button>
+          <Button
+            onClick={handleAdvisorTask}
+            disabled={advisorLoading}
+            className="bg-white/10 border border-white/20 text-white hover:bg-white/20 font-medium"
+          >
+            {advisorLoading ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Bot className="size-4 mr-2" />}
+            Tâche Agent: Conseiller académique
+          </Button>
         </div>
       </div>
+
+      {(advisorOutput || advisorError) && (
+        <Section
+          title="Sortie de l'Academic Advisor Agent"
+          description="Résultat récupéré via l'API de l'agent académique"
+        >
+          {advisorError ? (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+              {advisorError}
+            </div>
+          ) : (
+            <div className="prose prose-sm max-w-none rounded-lg border border-border bg-muted/30 p-4">
+              <ReactMarkdown>{advisorOutput}</ReactMarkdown>
+            </div>
+          )}
+        </Section>
+      )}
 
       {/* KPI strip */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">

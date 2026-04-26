@@ -54,6 +54,7 @@ export function useAgentTask() {
       requiresAI?: boolean;
       aiSystem?: string;
       aiPrompt?: string;
+      externalRun?: () => Promise<string>;
     }) => {
       const id = `task-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const stepLabels = STEPS[config.type];
@@ -83,7 +84,9 @@ export function useAgentTask() {
           const isAIStep =
             (config.type === "analytics_agent" && i === 2) ||
             (config.type === "doc_agent" && i === 2);
-          if (isAIStep && config.requiresAI && config.aiPrompt) {
+          if (isAIStep && config.externalRun) {
+            aiResult = await config.externalRun();
+          } else if (isAIStep && config.requiresAI && config.aiPrompt) {
             aiResult = await query(
               config.aiPrompt,
               config.aiSystem ?? "Tu es un assistant analytique pour UCAR.",
