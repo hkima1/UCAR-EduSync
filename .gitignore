@@ -16,6 +16,12 @@ dist-ssr
 .nitro
 *.local
 
+<<<<<<< HEAD
+=======
+# Local SQLite database
+server/*.db
+
+>>>>>>> 3e2ec72 (aa)
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

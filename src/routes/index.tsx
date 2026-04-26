@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAuthStore, type Role } from "@/stores/authStore";
 import { authenticateUser, validateTotp, MOCK_USERS } from "@/mock/auth";
+=======
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useAuthStore, type Role } from "@/stores/authStore";
+import { login as apiLogin, verifyOtp as apiVerifyOtp, ApiError } from "@/lib/api";
+>>>>>>> 3e2ec72 (aa)
 import { useState, useEffect, useRef } from "react";
 import {
   Lock,
@@ -13,10 +19,18 @@ import {
   KeyRound,
   Loader2,
   Info,
+<<<<<<< HEAD
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
+=======
+  UserPlus,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+
+export const Route = createFileRoute("/")(  {
+>>>>>>> 3e2ec72 (aa)
   head: () => ({
     meta: [
       { title: "Connexion — UCAR · Université de Carthage" },
@@ -34,7 +48,11 @@ type Step = "credentials" | "totp" | "loading";
 
 function LoginPage() {
   const user = useAuthStore((s) => s.user);
+<<<<<<< HEAD
   const login = useAuthStore((s) => s.login);
+=======
+  const loginToStore = useAuthStore((s) => s.login);
+>>>>>>> 3e2ec72 (aa)
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>("credentials");
@@ -43,8 +61,17 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [totpCode, setTotpCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
+<<<<<<< HEAD
   const [pendingUser, setPendingUser] = useState<ReturnType<typeof authenticateUser>>(null);
   const [showCredentials, setShowCredentials] = useState(false);
+=======
+  const [loading, setLoading] = useState(false);
+
+  // API state
+  const [sessionToken, setSessionToken] = useState("");
+  const [devOtpCode, setDevOtpCode] = useState(""); // DEV only: shown in console hint
+  const [userPreview, setUserPreview] = useState<{ name: string; email: string; masked_contact?: string } | null>(null);
+>>>>>>> 3e2ec72 (aa)
 
   const totpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -56,7 +83,11 @@ function LoginPage() {
   }, [user, navigate]);
 
   // ── Step 1: Credentials ──
+<<<<<<< HEAD
   const handleCredentialSubmit = (e: React.FormEvent) => {
+=======
+  const handleCredentialSubmit = async (e: React.FormEvent) => {
+>>>>>>> 3e2ec72 (aa)
     e.preventDefault();
     setError("");
 
@@ -65,6 +96,7 @@ function LoginPage() {
       return;
     }
 
+<<<<<<< HEAD
     // Simulate: SELECT * FROM users WHERE email = $1 AND password_hash = crypt($2, password_hash)
     const matchedUser = authenticateUser(email, password);
 
@@ -80,6 +112,27 @@ function LoginPage() {
       setTimeout(() => totpRefs.current[0]?.focus(), 100);
     } else {
       completeLogin(matchedUser);
+=======
+    setLoading(true);
+    try {
+      const result = await apiLogin(email, password);
+
+      if (result.requires_otp) {
+        setSessionToken(result.session_token);
+        setDevOtpCode(result.otp_code); // DEV only
+        setUserPreview(result.user_preview);
+        setStep("totp");
+        setTimeout(() => totpRefs.current[0]?.focus(), 100);
+      }
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Erreur de connexion au serveur. Vérifiez que le backend est démarré.");
+      }
+    } finally {
+      setLoading(false);
+>>>>>>> 3e2ec72 (aa)
     }
   };
 
@@ -101,7 +154,11 @@ function LoginPage() {
     }
   };
 
+<<<<<<< HEAD
   const handleTotpSubmit = (e: React.FormEvent) => {
+=======
+  const handleTotpSubmit = async (e: React.FormEvent) => {
+>>>>>>> 3e2ec72 (aa)
     e.preventDefault();
     setError("");
 
@@ -111,6 +168,7 @@ function LoginPage() {
       return;
     }
 
+<<<<<<< HEAD
     if (!pendingUser) return;
 
     // Simulate: SELECT 1 FROM user_totp WHERE user_id = $1 AND code = $2
@@ -139,13 +197,54 @@ function LoginPage() {
       });
       navigate({ to: routeForRole(u.role) });
     }, 1200);
+=======
+    setLoading(true);
+    try {
+      const result = await apiVerifyOtp(sessionToken, code);
+
+      // Store JWT tokens
+      localStorage.setItem("ucar-access-token", result.access_token);
+      localStorage.setItem("ucar-refresh-token", result.refresh_token);
+
+      // Complete login
+      setStep("loading");
+      setTimeout(() => {
+        loginToStore({
+          id: result.user.id,
+          name: result.user.name,
+          role: result.user.role as Role,
+          institutionId: result.user.institutionId,
+          institutionName: result.user.institutionName,
+          avatarInitials: result.user.avatarInitials,
+          email: result.user.email,
+        });
+        navigate({ to: routeForRole(result.user.role as Role) });
+      }, 800);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Erreur de vérification. Veuillez réessayer.");
+      }
+      setTotpCode(["", "", "", "", "", ""]);
+      totpRefs.current[0]?.focus();
+    } finally {
+      setLoading(false);
+    }
+>>>>>>> 3e2ec72 (aa)
   };
 
   const goBack = () => {
     setStep("credentials");
     setTotpCode(["", "", "", "", "", ""]);
     setError("");
+<<<<<<< HEAD
     setPendingUser(null);
+=======
+    setSessionToken("");
+    setUserPreview(null);
+    setDevOtpCode("");
+>>>>>>> 3e2ec72 (aa)
   };
 
   return (
@@ -266,10 +365,27 @@ function LoginPage() {
               <button
                 id="login-submit"
                 type="submit"
+<<<<<<< HEAD
                 className="w-full h-11 rounded-lg bg-navy text-white font-medium text-sm flex items-center justify-center gap-2 hover:bg-navy/90 transition-colors active:scale-[0.98]"
               >
                 Continuer
                 <ArrowRight className="size-4" />
+=======
+                disabled={loading}
+                className="w-full h-11 rounded-lg bg-navy text-white font-medium text-sm flex items-center justify-center gap-2 hover:bg-navy/90 transition-colors active:scale-[0.98] disabled:opacity-60"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Vérification…
+                  </>
+                ) : (
+                  <>
+                    Continuer
+                    <ArrowRight className="size-4" />
+                  </>
+                )}
+>>>>>>> 3e2ec72 (aa)
               </button>
 
               <div className="text-center">
@@ -281,6 +397,7 @@ function LoginPage() {
                 </button>
               </div>
 
+<<<<<<< HEAD
               {/* Demo credentials hint */}
               <div className="mt-6 border-t border-border pt-5">
                 <button
@@ -317,6 +434,18 @@ function LoginPage() {
                     ))}
                   </div>
                 )}
+=======
+              {/* Registration link */}
+              <div className="border-t border-border pt-5 text-center">
+                <p className="text-sm text-muted-foreground mb-3">Vous n'avez pas de compte ?</p>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center justify-center gap-2 h-10 rounded-lg border border-navy/20 bg-navy/5 text-navy font-medium text-sm px-5 hover:bg-navy/10 transition-colors"
+                >
+                  <UserPlus className="size-4" />
+                  Créer un compte
+                </Link>
+>>>>>>> 3e2ec72 (aa)
               </div>
             </form>
           )}
@@ -337,6 +466,7 @@ function LoginPage() {
                 </div>
                 <h1 className="font-display text-2xl font-bold tracking-tight">Vérification 2FA</h1>
                 <p className="text-sm text-muted-foreground mt-1.5">
+<<<<<<< HEAD
                   Saisissez le code à 6 chiffres de votre application d'authentification.
                 </p>
                 {pendingUser && (
@@ -344,6 +474,22 @@ function LoginPage() {
                     <span className="text-muted-foreground">Connecté en tant que :</span>{" "}
                     <span className="font-semibold">{pendingUser.name}</span>
                     <span className="text-muted-foreground ml-2">({pendingUser.email})</span>
+=======
+                  Saisissez le code à 6 chiffres envoyé à votre adresse email.
+                </p>
+                {userPreview && (
+                  <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border text-xs">
+                    <span className="text-muted-foreground">Code envoyé à :</span>{" "}
+                    <span className="font-semibold">{userPreview.masked_contact || userPreview.email}</span>
+                  </div>
+                )}
+
+                {/* DEV: Show OTP */}
+                {devOtpCode && (
+                  <div className="mt-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs">
+                    <span className="font-semibold text-amber-700">🔧 DEV — Code OTP :</span>{" "}
+                    <span className="font-mono font-bold text-amber-800 text-sm">{devOtpCode}</span>
+>>>>>>> 3e2ec72 (aa)
                   </div>
                 )}
               </div>
@@ -379,6 +525,7 @@ function LoginPage() {
               <button
                 id="totp-submit"
                 type="submit"
+<<<<<<< HEAD
                 className="w-full h-11 rounded-lg bg-navy text-white font-medium text-sm flex items-center justify-center gap-2 hover:bg-navy/90 transition-colors active:scale-[0.98]"
               >
                 <ShieldCheck className="size-4" />
@@ -387,6 +534,23 @@ function LoginPage() {
 
               <div className="text-center text-xs text-muted-foreground">
                 Le code expire dans 30 secondes.
+=======
+                disabled={loading}
+                className="w-full h-11 rounded-lg bg-navy text-white font-medium text-sm flex items-center justify-center gap-2 hover:bg-navy/90 transition-colors active:scale-[0.98] disabled:opacity-60"
+              >
+                {loading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <>
+                    <ShieldCheck className="size-4" />
+                    Vérifier et se connecter
+                  </>
+                )}
+              </button>
+
+              <div className="text-center text-xs text-muted-foreground">
+                Le code expire dans 5 minutes.
+>>>>>>> 3e2ec72 (aa)
               </div>
             </form>
           )}
@@ -416,5 +580,10 @@ function routeForRole(role: Role): string {
     institution_admin: "/admin/dashboard",
     director: "/director/dashboard",
     super_admin: "/superadmin/dashboard",
+<<<<<<< HEAD
   }[role];
+=======
+    ucar_admin: "/superadmin/dashboard",
+  }[role] || "/";
+>>>>>>> 3e2ec72 (aa)
 }
