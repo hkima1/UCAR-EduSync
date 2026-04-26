@@ -1,8 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { PageHeader, Section, StatCard } from "@/components/ui/page-primitives";
 import { esgMetrics } from "@/mock/financials";
-import { Leaf, Zap, Droplets, Recycle } from "lucide-react";
+import { Leaf, Zap, Droplets, Recycle, Bot, Loader2 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { Button } from "@/components/ui/button";
+import { useUIStore } from "@/stores/uiStore";
+import { useAgentTask } from "@/hooks/useAgentTask";
+import { useEnvironmentalAdvisorAPI } from "@/hooks/useEnvironmentalAdvisorAPI";
+import ReactMarkdown from "react-markdown";
 
 export const Route = createFileRoute("/admin/esg")({
   head: () => ({ meta: [{ title: "ESG & Dev. Durable — Admin. Établissement" }] }),
@@ -19,10 +25,74 @@ const ESG_DATA = [
 
 function AdminESG() {
   const currentEsg = esgMetrics["insat"];
+  
+  const { submitTask } = useAgentTask();
+  const { analyzeAsMarkdown } = useEnvironmentalAdvisorAPI();
+  const openAgents = useUIStore((s) => s.openAgents);
+  
+  const [advisorLoading, setAdvisorLoading] = useState(false);
+  const [advisorError, setAdvisorError] = useState<string | null>(null);
+  const [advisorOutput, setAdvisorOutput] = useState<string>("");
+
+  const handleAdvisorTask = async () => {
+    setAdvisorLoading(true);
+    setAdvisorError(null);
+    openAgents();
+
+    await submitTask({
+      type: "analytics_agent",
+      description: "Conseiller Environnemental (Environmental Advisor Agent)",
+      payload: { source: "environmental_advisor_agent", institution: "INSAT" },
+      externalRun: async () => {
+        try {
+          const output = await analyzeAsMarkdown("INSAT");
+          setAdvisorOutput(output);
+          return output;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Erreur inconnue";
+          setAdvisorError(message);
+          throw error;
+        }
+      },
+    });
+
+    setAdvisorLoading(false);
+  };
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Admin. · INSAT" title="Rapport Environnemental (ESG)" description="Suivi de la consommation énergétique, empreinte carbone et gestion des déchets." />
+      <PageHeader 
+        eyebrow="Admin. · INSAT" 
+        title="Rapport Environnemental (ESG)" 
+        description="Suivi de la consommation énergétique, empreinte carbone et gestion des déchets." 
+        actions={
+          <Button
+            onClick={handleAdvisorTask}
+            disabled={advisorLoading}
+            className="bg-success text-success-foreground hover:bg-success/90 font-medium"
+          >
+            {advisorLoading ? <Loader2 className="size-4 mr-2 animate-spin" /> : <Bot className="size-4 mr-2" />}
+            Tâche Agent: Conseiller ESG
+          </Button>
+        }
+      />
+
+      {(advisorOutput || advisorError) && (
+        <Section
+          title="Stratégie d'Aménagement Vert"
+          description="Résultat récupéré via l'Agent Environnemental"
+        >
+          {advisorError ? (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+              {advisorError}
+            </div>
+          ) : (
+            <div className="prose prose-sm max-w-none rounded-lg border border-border bg-muted/30 p-4">
+              <ReactMarkdown>{advisorOutput}</ReactMarkdown>
+            </div>
+          )}
+        </Section>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {currentEsg ? (
