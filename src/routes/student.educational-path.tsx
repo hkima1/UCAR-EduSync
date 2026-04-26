@@ -1,9 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { PageHeader, Section } from "@/components/ui/page-primitives";
 import { currentStudent, gpaTrend } from "@/mock/students";
-import { Sparkles, BookOpen, CheckCircle2, Clock, Circle, Award, ChevronRight } from "lucide-react";
+import { Sparkles, BookOpen, CheckCircle2, Clock, Circle, Award, ChevronRight, Bot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAgentTask } from "@/hooks/useAgentTask";
+import { useAcademicAdvisorAPI } from "@/hooks/useAcademicAdvisorAPI";
+import { useUIStore } from "@/stores/uiStore";
+import ReactMarkdown from "react-markdown";
 
 export const Route = createFileRoute("/student/educational-path")({
   head: () => ({ meta: [{ title: "Parcours académique — UCAR Étudiant" }] }),
@@ -18,13 +23,68 @@ const CERTIFICATIONS = [
 ];
 
 function StudentEducationalPath() {
+  const { submitTask } = useAgentTask();
+  const { adviseAsMarkdown } = useAcademicAdvisorAPI();
+  const openAgents = useUIStore((s) => s.openAgents);
+  const [advisorLoading, setAdvisorLoading] = useState(false);
+  const [advisorError, setAdvisorError] = useState<string | null>(null);
+  const [advisorOutput, setAdvisorOutput] = useState<string>("");
+
+  const handleAdvisorTask = async () => {
+    setAdvisorLoading(true);
+    setAdvisorError(null);
+    openAgents();
+
+    await submitTask({
+      type: "analytics_agent",
+      description: "Conseils de parcours et certifications (Academic Advisor Agent)",
+      payload: { source: "academic_advisor_agent", studentId: currentStudent.id },
+      externalRun: async () => {
+        try {
+          const output = await adviseAsMarkdown(currentStudent.id);
+          setAdvisorOutput(output);
+          return output;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Erreur inconnue";
+          setAdvisorError(message);
+          throw error;
+        }
+      },
+    });
+
+    setAdvisorLoading(false);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Étudiant · ENIT"
         title="Parcours académique"
         description="Visualisez votre progression semestrielle, vos objectifs de diplôme et les certifications recommandées par l'IA."
+        actions={
+          <Button onClick={handleAdvisorTask} disabled={advisorLoading} className="gap-2">
+            {advisorLoading ? <Loader2 className="size-4 animate-spin" /> : <Bot className="size-4" />}
+            Tâche Agent: Conseiller académique
+          </Button>
+        }
       />
+
+      {(advisorOutput || advisorError) && (
+        <Section
+          title="Sortie de l'Academic Advisor Agent"
+          description="Conseils personnalisés récupérés via l'API Python"
+        >
+          {advisorError ? (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+              {advisorError}
+            </div>
+          ) : (
+            <div className="prose prose-sm max-w-none rounded-lg border border-border bg-muted/30 p-4">
+              <ReactMarkdown>{advisorOutput}</ReactMarkdown>
+            </div>
+          )}
+        </Section>
+      )}
 
       {/* Semester stepper */}
       <Section title="Progression académique" description={`Génie Informatique · ${currentStudent.totalCredits} crédits pour le diplôme`}>

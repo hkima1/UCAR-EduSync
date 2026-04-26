@@ -187,8 +187,6 @@ export const esgData = {
   ],
 };
 
-<<<<<<< HEAD
-=======
 export const esgMetrics: Record<string, any> = {
   insat: {
     carbonFootprint: 18.4,
@@ -204,7 +202,6 @@ export const esgMetrics: Record<string, any> = {
   }
 };
 
->>>>>>> 3e2ec72 (aa)
 // University-wide financial summary for super admin
 export const universityFinancials = [
   { institutionId: "enit", name: "ENIT", allocated: 2800000, consumed: 2156000, executionRate: 77, status: "on track" },
