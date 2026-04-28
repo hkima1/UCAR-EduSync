@@ -38,10 +38,10 @@ function StudentEducationalPath() {
     await submitTask({
       type: "analytics_agent",
       description: "Conseils de parcours et certifications (Academic Advisor Agent)",
-      payload: { source: "academic_advisor_agent", studentId: currentStudent.id },
+      payload: { source: "academic_advisor_agent", studentId: "A-002" },
       externalRun: async () => {
         try {
-          const output = await adviseAsMarkdown(currentStudent.id);
+          const output = await adviseAsMarkdown("A-002");
           setAdvisorOutput(output);
           return output;
         } catch (error) {

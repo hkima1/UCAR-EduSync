@@ -1,12 +1,44 @@
 {
     "student_id": "A-002",
-    "first_name": "Yasmine",
-    "last_name": "Ben Salah",
+    "first_name": "soulaymen",
+    "last_name": "tlili",
     "date_of_birth": "2003-07-13",
     "gender": "M",
-    "email": "youssef.amrani@example.com",
+    "email": "tlilisoulaymen@gmail.com",
     "phone": "0555000222",
     "institution": "Institute A",
     "program": "Mathematics",
-    "enrollment_year": 2021
+    "enrollment_year": 2021,
+    "legal_certifications": [
+        {
+            "certification_id": "2081792d-e386-4a08-9e1d-345b08d69077",
+            "issued_on": "2026-04-26T08:39:36.460621Z",
+            "document_type": "Legal Certification",
+            "qr_code_path": "C:\\Users\\tlili\\OneDrive\\Bureau\\UCAR-EduSync-main\\agent\\legal_document_generator_agent\\qr_codes\\A-002_qr.png"
+        },
+        {
+            "certification_id": "34d97cfc-52c5-4e11-b978-4210acaa48e5",
+            "issued_on": "2026-04-26T08:40:06.808382Z",
+            "document_type": "Legal Certification",
+            "qr_code_path": "C:\\Users\\tlili\\OneDrive\\Bureau\\UCAR-EduSync-main\\agent\\legal_document_generator_agent\\qr_codes\\A-002_qr.png"
+        },
+        {
+            "certification_id": "c983336c-b15c-4729-9044-74fbf84bf45f",
+            "issued_on": "2026-04-26T08:41:28.972089Z",
+            "document_type": "Legal Certification",
+            "qr_code_path": "C:\\Users\\tlili\\OneDrive\\Bureau\\UCAR-EduSync-main\\agent\\legal_document_generator_agent\\qr_codes\\A-002_qr.png"
+        },
+        {
+            "certification_id": "5ee57039-9993-46d5-96e0-1db397f4d306",
+            "issued_on": "2026-04-26T08:57:23.284385Z",
+            "document_type": "Legal Certification",
+            "qr_code_path": "C:\\Users\\tlili\\OneDrive\\Bureau\\UCAR-EduSync-main\\agent\\legal_document_generator_agent\\qr_codes\\A-002_qr.png"
+        },
+        {
+            "certification_id": "9fe3448f-cf5c-4655-9f60-429d3a8a0577",
+            "issued_on": "2026-04-26T10:55:07.922920Z",
+            "document_type": "Legal Certification",
+            "qr_code_path": "C:\\Users\\tlili\\OneDrive\\Bureau\\UCAR-EduSync-main\\agent\\legal_document_generator_agent\\qr_codes\\A-002_qr.png"
+        }
+    ]
 }

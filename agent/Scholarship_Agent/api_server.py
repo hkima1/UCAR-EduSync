@@ -14,6 +14,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from Scholarship_Agent.test_api import generate_recommendation
@@ -61,3 +62,10 @@ def recommendation(payload: RecommendationRequest) -> dict:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to generate recommendation: {exc}") from exc
+
+@app.get("/api/document/{student_id}")
+def download_document(student_id: str):
+    pdf_path = Path(__file__).resolve().parent / "generated_documents" / f"{student_id}.pdf"
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="PDF not found.")
+    return FileResponse(pdf_path, media_type='application/pdf', filename=f"{student_id}_Scholarships.pdf")

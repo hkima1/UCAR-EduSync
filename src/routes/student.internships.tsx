@@ -2,9 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHeader, Section } from "@/components/ui/page-primitives";
 import { offers, scholarships } from "@/mock/offers";
-import { Briefcase, GraduationCap, MapPin, Clock, CalendarDays, Award, Sparkles, ExternalLink } from "lucide-react";
+import { Briefcase, GraduationCap, MapPin, Clock, CalendarDays, Award, Sparkles, ExternalLink, Bot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAgentTask } from "@/hooks/useAgentTask";
+import { useScholarshipAdvisorAPI, formatScholarshipMarkdown } from "@/hooks/useScholarshipAdvisorAPI";
+import { useUIStore } from "@/stores/uiStore";
+import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/student/internships")({
@@ -21,20 +24,111 @@ const DOMAIN_COLOR: Record<string, string> = {
   Marketing: "bg-destructive/10 text-destructive border-destructive/30",
 };
 
+const COMPANY_URLS: Record<string, string> = {
+  "Tunisie Telecom": "https://www.tunisietelecom.tn",
+  "Banque de l'Habitat": "https://www.bhbank.tn",
+  "STB": "https://www.stb.com.tn",
+  "Sofrecom Tunisie": "https://www.sofrecom.com",
+  "Vermeg": "https://www.vermeg.com",
+  "Poulina Group": "https://www.poulina.com.tn",
+  "ATB": "https://www.atb.com.tn",
+  "Telnet Holding": "https://www.telnetholding.com",
+  "OneTech BSI": "https://www.onetech-group.com",
+  "Délice Holding": "https://www.delice.tn"
+};
+
 function StudentInternships() {
   const [tab, setTab] = useState<"internships" | "scholarships">("internships");
   const [applying, setApplying] = useState<string | null>(null);
   const { submitTask } = useAgentTask();
+  
+  const { adviseAsMarkdown } = useScholarshipAdvisorAPI();
+  const openAgents = useUIStore((s) => s.openAgents);
+  const [advisorLoading, setAdvisorLoading] = useState(false);
+  const [advisorError, setAdvisorError] = useState<string | null>(null);
+  const [advisorOutput, setAdvisorOutput] = useState<string>("");
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
 
-  const handleApply = async (id: string, title: string) => {
+  const handleApply = async (id: string, title: string, company: string) => {
     setApplying(id);
-    await submitTask({ type: "workflow_agent", description: `Candidature — ${title}`, payload: { offerId: id, studentId: "s1" }, targetRole: "institution_admin" });
+    await submitTask({ type: "workflow_agent", description: `Candidature — ${title}`, payload: { offerId: id, studentId: "A-002" }, targetRole: "institution_admin" });
     setApplying(null);
+    const url = COMPANY_URLS[company];
+    if (url) {
+      window.open(url, "_blank");
+    }
+  };
+
+  const handleAdvisorTask = async () => {
+    setAdvisorLoading(true);
+    setAdvisorError(null);
+    openAgents();
+
+    await submitTask({
+      type: "analytics_agent",
+      description: "Recherche de bourses et stages (Scholarship Agent)",
+      payload: { source: "scholarship_agent", studentId: "A-002" },
+      externalRun: async () => {
+        try {
+          const { advise } = useScholarshipAdvisorAPI();
+          const data = await advise("A-002");
+          setDownloadUrl(data.download_url as string | null);
+          const output = formatScholarshipMarkdown(data);
+          setAdvisorOutput(output);
+          return output;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Erreur inconnue";
+          setAdvisorError(message);
+          throw error;
+        }
+      },
+    });
+
+    setAdvisorLoading(false);
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Étudiant · ENIT" title="Stages & Bourses" description="Offres matchées à votre profil par l'IA. Postulez en un clic — l'agent notifie le partenariat." />
+      <PageHeader 
+        eyebrow="Étudiant · ENIT" 
+        title="Stages & Bourses" 
+        description="Offres matchées à votre profil par l'IA. Postulez en un clic — l'agent notifie le partenariat." 
+        actions={
+          <Button onClick={handleAdvisorTask} disabled={advisorLoading} className="gap-2">
+            {advisorLoading ? <Loader2 className="size-4 animate-spin" /> : <Bot className="size-4" />}
+            Tâche Agent: Bourses & Stages
+          </Button>
+        }
+      />
+
+      {(advisorOutput || advisorError) && (
+        <Section
+          title="Sortie du Scholarship Agent"
+          description="Recommandations récupérées via l'API Python"
+        >
+          {advisorError ? (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+              {advisorError}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="prose prose-sm max-w-none rounded-lg border border-border bg-muted/30 p-4">
+                <ReactMarkdown>{advisorOutput}</ReactMarkdown>
+              </div>
+              {downloadUrl && (
+                <Button 
+                  onClick={() => window.open(downloadUrl, "_blank")}
+                  className="w-full bg-gold hover:bg-gold/90 text-navy gap-2 shadow-xl"
+                  size="lg"
+                >
+                  <Bot className="size-5" />
+                  TÉLÉCHARGER LE RAPPORT PDF
+                </Button>
+              )}
+            </div>
+          )}
+        </Section>
+      )}
 
       {/* AI banner */}
       <div className="relative overflow-hidden rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/10 via-background to-background px-6 py-5">
@@ -100,7 +194,7 @@ function StudentInternships() {
                 <span className="flex items-center gap-1"><MapPin className="size-3" />{o.location}</span>
                 <span className="flex items-center gap-1"><CalendarDays className="size-3" />Limite {new Date(o.deadline).toLocaleDateString("fr-FR")}</span>
               </div>
-              <Button size="sm" className="mt-auto w-full gap-2" disabled={applying === o.id} onClick={() => handleApply(o.id, o.title)}>
+              <Button size="sm" className="mt-auto w-full gap-2" disabled={applying === o.id} onClick={() => handleApply(o.id, o.title, o.company)}>
                 {applying === o.id ? "Envoi en cours..." : "Postuler"}
                 <ExternalLink className="size-3" />
               </Button>

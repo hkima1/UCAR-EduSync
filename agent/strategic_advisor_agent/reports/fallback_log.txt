@@ -1,0 +1,9 @@
+[2026-04-26T11:56:35.035730Z] report_id=UCAR-SAR-202604261155 | status=SUCCESS(fallback) | reason=LLM timeout after 40s — used most recent saved report
+[2026-04-26T12:12:45.216313Z] report_id=UCAR-SAR-202604261212 | status=SUCCESS(fallback) | reason=LLM timeout after 40s — used most recent saved report
+[2026-04-26T12:39:11.447566Z] report_id=UCAR-SAR-202604261238 | status=SUCCESS(fallback) | reason=LLM timeout after 40s — used most recent saved report
+[2026-04-26T14:02:22.122834Z] report_id=UCAR-EEA-202604261501 | status=SUCCESS(fallback) | reason=LLM timeout after 40s — used most recent saved report
+[2026-04-26T14:02:43.149814Z] report_id=UCAR-SAR-202604261402 | status=SUCCESS(fallback) | reason=LLM timeout after 40s — used most recent saved report
+[2026-04-26T15:03:28.385284Z] report_id=UCAR-SAR-202604261502 | status=SUCCESS(fallback) | reason=LLM timeout after 40s — used most recent saved report
+[2026-04-26T15:34:37.049724Z] report_id=UCAR-EEA-202604261633 | status=SUCCESS(fallback) | reason=LLM timeout after 40s — used most recent saved report
+[2026-04-28T18:56:30.296697Z] report_id=UCAR-EEA-202604281955 | status=SUCCESS(fallback) | reason=LLM timeout after 40s — used most recent saved report
+[2026-04-28T18:57:54.278456Z] report_id=UCAR-SAR-202604281857 | status=SUCCESS(fallback) | reason=LLM timeout after 40s — used most recent saved report

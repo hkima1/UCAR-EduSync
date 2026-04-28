@@ -7,27 +7,34 @@ import fitz  # PyMuPDF
 from PIL import Image
 import io
 from dotenv import load_dotenv
+from pathlib import Path
 
-# Load API key from src/.env
-load_dotenv(r"C:\Users\tlili\OneDrive\Bureau\UCAR-EduSync-main\unstructured\src\.env")
-api_key = os.getenv("NVIDIA_API_KEY")
+# Load API key from src/.env (relative to this file)
+_env_path = Path(__file__).resolve().parent.parent / "src" / ".env"
+load_dotenv(str(_env_path))
+
+# ─── Gemma LLM Configuration (google/gemma-4-31b-it via NVIDIA NIM) ──────────
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "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")
+INVOKE_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
+MODEL_NAME = "google/gemma-4-31b-it"
+# ─────────────────────────────────────────────────────────────────────────────
 
 invoke_url = "https://ai.api.nvidia.com/v1/cv/nvidia/nemotron-ocr-v1"
-chat_url = "https://integrate.api.nvidia.com/v1/chat/completions"
+chat_url = INVOKE_URL
 
 RAG_DATA_DIR = r"C:\Users\tlili\OneDrive\Bureau\UCAR-EduSync-main\unstructured\rag\data_for_rag"
 RAG_OUTPUT_DIR = r"C:\Users\tlili\OneDrive\Bureau\UCAR-EduSync-main\unstructured\rag\rag_output"
 
 def extract_json_with_llm(text_content, source_file):
-    """Uses LLM to convert arbitrary text into the required structured student schema."""
+    """Uses Gemma LLM (streaming) to convert arbitrary text into the required structured student schema."""
     headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
+        "Authorization": f"Bearer {NVIDIA_API_KEY}",
+        "Accept": "text/event-stream"
     }
-    
+
     # Escape backslashes for JSON payload safety
     safe_source = source_file.replace("\\", "/")
-    
+
     system_prompt = f"""You are a smart data extraction assistant. Extract any student information found in the following text and format it into a JSON object matching this exact schema:
 {{
   "source_file": "{safe_source}",
@@ -53,30 +60,59 @@ Return ONLY valid JSON, do not wrap it in markdown code blocks. Always return va
 """
 
     payload = {
-        "model": "meta/llama-3.1-70b-instruct",
+        "model": MODEL_NAME,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": f"Here is the parsed text:\n{text_content}"}
         ],
-        "temperature": 0.1,
-        "max_tokens": 2048
+        "max_tokens": 16384,
+        "temperature": 1.00,
+        "top_p": 0.95,
+        "stream": True,
+        "chat_template_kwargs": {"enable_thinking": True},
     }
 
-    print("  -> Engaging LLM to extract JSON structure...")
+    print("  -> Engaging Gemma LLM to extract JSON structure (streaming)...")
+    final_content = ""
     try:
-        response = requests.post(chat_url, headers=headers, json=payload)
+        response = requests.post(chat_url, headers=headers, json=payload, stream=True, timeout=180)
         response.raise_for_status()
-        result = response.json()
-        content = result["choices"][0]["message"]["content"].strip()
-        
+        for line in response.iter_lines():
+            if not line:
+                continue
+            decoded = line.decode("utf-8")
+            if not decoded.startswith("data:"):
+                continue
+            data_str = decoded[5:].strip()
+            if data_str == "[DONE]":
+                break
+            try:
+                data = json.loads(data_str)
+                choices = data.get("choices", [])
+                if not choices:
+                    continue
+                delta = choices[0].get("delta", {})
+                # Handle reasoning tokens (thinking phase)
+                reasoning = delta.get("reasoning_content")
+                if reasoning:
+                    print(reasoning, end="", flush=True)
+                chunk = delta.get("content")
+                if chunk:
+                    final_content += chunk
+                    print(chunk, end="", flush=True)
+            except json.JSONDecodeError:
+                continue
+        print("\n  -> Gemma extraction done.")
+
         # Clean up possible markdown code blocks
+        content = final_content.strip()
         if content.startswith("```json"):
-             content = content[7:]
+            content = content[7:]
         elif content.startswith("```"):
-             content = content[3:]
+            content = content[3:]
         if content.endswith("```"):
-             content = content[:-3]
-             
+            content = content[:-3]
+
         parsed_json = json.loads(content.strip())
         return parsed_json
     except Exception as e:

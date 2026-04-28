@@ -4,6 +4,7 @@ import { PageHeader, Section } from "@/components/ui/page-primitives";
 import { FileText, GraduationCap, ClipboardList, CreditCard, BookOpen, Briefcase, Download, Clock, CheckCircle2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAgentTask } from "@/hooks/useAgentTask";
+import { useLegalDocumentAPI } from "@/hooks/useLegalDocumentAPI";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/student/documents")({
@@ -41,14 +42,28 @@ function StudentDocuments() {
   const [modalDoc, setModalDoc] = useState<typeof DOCS[0] | null>(null);
   const [lang, setLang] = useState<"FR" | "EN" | "AR">("FR");
   const { submitTask } = useAgentTask();
+  const { generateDocument } = useLegalDocumentAPI();
 
   const handleRequest = async () => {
     if (!modalDoc) return;
     setRequesting(modalDoc.id);
     setModalDoc(null);
+    
+    // UI Task visual log
     await submitTask({ type: "workflow_agent", description: `Demande : ${modalDoc.label}`, payload: { docId: modalDoc.id, lang }, targetRole: "institution_admin" });
-    await submitTask({ type: "doc_agent", description: `Génération : ${modalDoc.label}`, payload: { docId: modalDoc.id, lang, studentId: "s1" } });
-    setDone((prev) => [...prev, modalDoc.id]);
+    await submitTask({ type: "doc_agent", description: `Génération IA : ${modalDoc.label}`, payload: { docId: modalDoc.id, lang, studentId: "A-002" } });
+    
+    try {
+      // Trigger the real Python agent
+      const downloadUrl = await generateDocument("A-002");
+      // Open the downloaded PDF in a new tab
+      window.open(downloadUrl, '_blank');
+      setDone((prev) => [...prev, modalDoc.id]);
+    } catch (error) {
+      console.error("Legal Agent generation failed:", error);
+      alert("Failed to generate the legal document.");
+    }
+
     setRequesting(null);
   };
 
@@ -85,17 +100,17 @@ function StudentDocuments() {
                 </div>
                 <Button
                   size="sm"
-                  className="w-full gap-2"
+                  className={cn("w-full gap-2 border", isDone ? "" : "border-gold/40")}
                   disabled={isDone || isLoading}
                   variant={isDone ? "outline" : "default"}
                   onClick={() => setModalDoc(doc)}
                 >
                   {isLoading ? (
-                    <><Clock className="size-4 animate-spin" />En cours…</>
+                    <><Clock className="size-4 animate-spin text-gold" />Génération IA en cours…</>
                   ) : isDone ? (
-                    <><Download className="size-4" />Voir dans Agents</>
+                    <><Download className="size-4" />Téléchargé</>
                   ) : (
-                    <><Plus className="size-4" />Demander</>
+                    <><Plus className="size-4 text-gold" />Demander Document IA</>
                   )}
                 </Button>
               </div>

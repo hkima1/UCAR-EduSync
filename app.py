@@ -278,5 +278,9 @@ if __name__ == "__main__":
     print("  /agents/scholarship/api/recommendation")
     print("  /agents/research/health")
     print("  /agents/research/api/research/author")
+    print("  /agents/employment/api/analyze")
+    print("  /agents/employment/api/reports")
+    print("  /agents/strategic/api/analyze")
+    print("  /agents/strategic/api/document/<report_id>")
 
-    run_simple(hostname=host, port=port, application=application, use_debugger=True, use_reloader=True)
+    run_simple(hostname=host, port=port, application=application, use_debugger=True, use_reloader=False)

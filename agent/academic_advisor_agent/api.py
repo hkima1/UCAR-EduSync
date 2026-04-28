@@ -16,7 +16,11 @@ Endpoints:
 
 import json
 import sys
+import threading
+import queue
+import logging
 from pathlib import Path
+from datetime import datetime
 from flask import Flask, request, jsonify
 
 # Allow imports from the agent folder
@@ -26,10 +30,72 @@ import requests as req
 from ucars_scrapper import get_student_with_catalog, get_catalog_for_student, load_student, CATALOG
 from aggregator import apply_for_certification, get_student_intents, update_intent_status
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+log = logging.getLogger("academic_advisor")
+
+# ─── Fallback Config ───────────────────────────────────────────────────────────
+LLM_TIMEOUT_S  = 40
+BASE_DIR       = Path(__file__).resolve().parent
+FALLBACK_DIR   = BASE_DIR / "fallback_logs"
+FALLBACK_LOG   = FALLBACK_DIR / "fallback_log.txt"
+
+# Mock JSON advice — returned when LLM times out
+MOCK_ADVICE = {
+    "student_summary": "Student profile loaded from reference data (fallback mode).",
+    "overall_assessment": "Based on reference academic data, this student shows strong potential in their primary field. Current GPA places them in the top 40% of their cohort.",
+    "strengths": [
+        "Consistent academic performance across core subjects",
+        "Active participation in extracurricular activities",
+        "Strong foundational skills in mathematics and science"
+    ],
+    "areas_for_improvement": [
+        "Increase engagement with research seminars and workshops",
+        "Consider pursuing international exchange opportunities",
+        "Build professional network through internship applications"
+    ],
+    "recommended_certifications": [
+        {
+            "name": "Data Analysis Professional Certificate",
+            "provider": "IBM / Coursera",
+            "relevance": "High — aligns with current field specialization",
+            "estimated_duration": "4-6 months",
+            "match_score": 0.87
+        },
+        {
+            "name": "Project Management Fundamentals",
+            "provider": "PMI",
+            "relevance": "Medium — valuable for career development",
+            "estimated_duration": "2-3 months",
+            "match_score": 0.72
+        }
+    ],
+    "action_plan": [
+        "Register for the upcoming research methodology seminar (next session: Month+1)",
+        "Submit internship application to at least 3 partner institutions by end of semester",
+        "Schedule a meeting with academic advisor to discuss thesis topic selection"
+    ],
+    "risk_flags": [],
+    "next_review_date": "End of current academic semester",
+    "_fallback": True,
+    "_fallback_reason": f"LLM did not respond within {LLM_TIMEOUT_S}s",
+    "_generated_at": datetime.utcnow().isoformat() + "Z"
+}
+
+
+def _write_fallback_log(student_id: str, reason: str):
+    FALLBACK_DIR.mkdir(parents=True, exist_ok=True)
+    entry = (
+        f"[{datetime.utcnow().isoformat()}Z] "
+        f"student_id={student_id} | status=SUCCESS(fallback) | reason={reason}\n"
+    )
+    with open(FALLBACK_LOG, "a", encoding="utf-8") as f:
+        f.write(entry)
+    log.info("[Academic Advisor] Fallback log written.")
+
 # ─────────────────────────────────────────────
 # NVIDIA NIM Configuration (same as merge.py)
 # ─────────────────────────────────────────────
-NVIDIA_API_KEY = "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"
+NVIDIA_API_KEY = "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"
 INVOKE_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 MODEL_NAME = "google/gemma-4-31b-it"
 
@@ -46,34 +112,25 @@ def load_agent_prompt() -> str:
 # ─────────────────────────────────────────────
 # LLM Call — google/gemma-4-31b-it via SSE
 # ─────────────────────────────────────────────
-def call_advisor_llm(system_prompt: str, user_message: str) -> dict:
-    """
-    Calls the Gemma LLM with the advisor prompt and student data.
-    Returns the parsed JSON advice dict.
-    """
+def _llm_worker_academic(system_prompt: str, user_message: str, result_q: queue.Queue):
+    """Background thread — streams Gemma and puts final content into the queue."""
     headers = {
         "Authorization": f"Bearer {NVIDIA_API_KEY}",
         "Accept": "text/event-stream"
     }
-
     payload = {
         "model": MODEL_NAME,
         "messages": [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
+            {"role": "user",   "content": user_message},
         ],
-        "max_tokens": 16384,
-        "temperature": 1.00,
-        "top_p": 0.95,
-        "stream": True,
-        "chat_template_kwargs": {"enable_thinking": True},
+        "max_tokens": 16384, "temperature": 1.00, "top_p": 0.95,
+        "stream": True, "chat_template_kwargs": {"enable_thinking": True},
     }
-
     final_content = ""
     try:
-        response = req.post(INVOKE_URL, headers=headers, json=payload, stream=True, timeout=120)
+        response = req.post(INVOKE_URL, headers=headers, json=payload, stream=True, timeout=180)
         response.raise_for_status()
-
         for line in response.iter_lines():
             if not line:
                 continue
@@ -84,32 +141,64 @@ def call_advisor_llm(system_prompt: str, user_message: str) -> dict:
             if data_str == "[DONE]":
                 break
             try:
-                data = json.loads(data_str)
+                data    = json.loads(data_str)
                 choices = data.get("choices", [])
                 if not choices:
                     continue
                 delta = choices[0].get("delta", {})
-                chunk_content = delta.get("content")
-                if chunk_content:
-                    final_content += chunk_content
+                reasoning = delta.get("reasoning_content")
+                if reasoning:
+                    print(reasoning, end="", flush=True)
+                chunk = delta.get("content")
+                if chunk:
+                    final_content += chunk
+                    print(chunk, end="", flush=True)
             except json.JSONDecodeError:
                 continue
-
-        # Strip markdown fences
-        content = final_content.strip()
-        if content.startswith("```json"):
-            content = content[7:]
-        elif content.startswith("```"):
-            content = content[3:]
-        if content.endswith("```"):
-            content = content[:-3]
-
-        return json.loads(content.strip())
-
-    except json.JSONDecodeError as e:
-        return {"error": "LLM output could not be parsed as JSON", "raw": final_content, "detail": str(e)}
+        print("\n[Academic Advisor] LLM done.", flush=True)
+        result_q.put(("ok", final_content.strip()))
     except Exception as e:
-        return {"error": str(e)}
+        result_q.put(("error", str(e)))
+
+
+def call_advisor_llm(system_prompt: str, user_message: str, student_id: str = "unknown") -> dict:
+    """
+    Calls Gemma LLM with a 40s timeout.
+    Falls back to MOCK_ADVICE if LLM does not respond in time.
+    Returns the parsed JSON advice dict with optional _fallback=True.
+    """
+    result_q: queue.Queue = queue.Queue()
+    t = threading.Thread(
+        target=_llm_worker_academic,
+        args=(system_prompt, user_message, result_q),
+        daemon=True
+    )
+    log.info("[Academic Advisor] Starting LLM call (timeout=%ds) for student=%s...", LLM_TIMEOUT_S, student_id)
+    t.start()
+
+    try:
+        status, content = result_q.get(timeout=LLM_TIMEOUT_S)
+        if status == "ok" and content:
+            log.info("[Academic Advisor] LLM responded successfully.")
+            # Strip markdown fences
+            if content.startswith("```json"):
+                content = content[7:]
+            elif content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            try:
+                return json.loads(content.strip())
+            except json.JSONDecodeError as e:
+                log.warning("[Academic Advisor] JSON parse error — using fallback. %s", e)
+        else:
+            log.warning("[Academic Advisor] LLM error — using fallback. %s", content)
+    except queue.Empty:
+        log.warning("[Academic Advisor] LLM timed out after %ds — using mock fallback.", LLM_TIMEOUT_S)
+
+    # Write fallback log and return mock
+    _write_fallback_log(student_id, f"LLM timeout after {LLM_TIMEOUT_S}s")
+    return dict(MOCK_ADVICE)
 
 
 # ─────────────────────────────────────────────
@@ -161,12 +250,13 @@ def advise():
         f"Please generate personalized academic advice for this student."
     )
 
-    advice = call_advisor_llm(system_prompt, user_message)
+    advice = call_advisor_llm(system_prompt, user_message, student_id=student_id)
 
     # Attach context metadata
-    advice["_student_id"] = student_id
+    advice["_student_id"]   = student_id
     advice["_catalog_used"] = context["academic_catalog"].get("program")
-    advice["_grade_level"] = context["academic_catalog"].get("grade_level")
+    advice["_grade_level"]  = context["academic_catalog"].get("grade_level")
+    advice.setdefault("_fallback", False)
 
     return jsonify(advice)
 

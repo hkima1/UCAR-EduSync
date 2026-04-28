@@ -3,7 +3,6 @@ import { useState } from "react";
 import { PageHeader, StatCard, Section } from "@/components/ui/page-primitives";
 import { institutionBudgets, anomalyTransactions, monthlySpend } from "@/mock/financials";
 import { staffMembers, leaveRequests } from "@/mock/staff";
-import { researchProjects } from "@/mock/research";
 import { useUIStore } from "@/stores/uiStore";
 import {
   BarChart, Bar, AreaChart, Area, ResponsiveContainer, XAxis, YAxis,
@@ -27,14 +26,13 @@ const PIE_DATA = [{ name: "Consommé", value: totalConsumed }, { name: "Restant"
 function AdminDashboard() {
   const openCopilot = useUIStore((s) => s.openCopilot);
   const activeStaff = staffMembers.filter((s) => s.institutionId === "insat");
-  const activeResearch = researchProjects.filter((p) => p.status === "active" && p.institutionId === "insat");
 
   return (
     <div className="space-y-6">
       <PageHeader
         eyebrow="Administrateur · INSAT"
         title="Tableau de bord"
-        description="Vue consolidée Finance, RH, Recherche, ESG et demandes de l'établissement."
+        description="Vue consolidée Finance, RH, ESG et demandes de l'établissement."
         actions={<Button onClick={openCopilot} variant="outline" className="border-gold/40 gap-2"><Sparkles className="size-4 text-gold" />IA Copilot</Button>}
       />
 
@@ -61,7 +59,6 @@ function AdminDashboard() {
           { label: "Exécution budget", value: `${execRate}%`, icon: Wallet, accent: execRate > 90 ? "destructive" as const : "gold" as const },
           { label: "Effectif total", value: activeStaff.length, icon: Users, accent: "navy" as const },
           { label: "Partenariats actifs", value: 4, icon: HeartHandshake, accent: "info" as const },
-          { label: "Projets recherche", value: activeResearch.length, icon: FlaskConical, accent: "success" as const },
           { label: "Score ESG", value: "67/100", icon: Leaf, accent: "success" as const },
           { label: "Demandes ouvertes", value: 8, icon: Inbox, accent: "warning" as const },
         ].map((k, i) => {

@@ -15,6 +15,7 @@ const path = require('path');
 const authRoutes = require('./routes/auth.cjs');
 const institutionsRoutes = require('./routes/institutions.cjs');
 const rolesRoutes = require('./routes/roles.cjs');
+const metricsRoutes = require('./routes/metrics.cjs');
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;
@@ -44,6 +45,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/institutions', institutionsRoutes);
 app.use('/api/roles', rolesRoutes);
+app.use('/metrics', metricsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

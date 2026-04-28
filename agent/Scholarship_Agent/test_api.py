@@ -25,11 +25,23 @@ from pathlib import Path
 from typing import Any
 
 import requests
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+
+LOGO_PATH = Path(__file__).resolve().parents[1] / "legal_document_generator_agent" / "logo-ucar.png"
+OUTPUT_DIR = Path(__file__).resolve().parent / "generated_documents"
+
+# UCAR Color Palette
+UCAR_BLUE = colors.HexColor("#003366")
+UCAR_GOLD = colors.HexColor("#FFCC00")
 
 
 # Structured NVIDIA configuration (same style as your sample script).
 NVIDIA_CONFIG: dict[str, Any] = {
-    "api_key": "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",
+    "api_key": "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",
     "invoke_url": "https://integrate.api.nvidia.com/v1/chat/completions",
     "model": "google/gemma-4-31b-it",
     "temperature": 0.1,
@@ -39,7 +51,7 @@ NVIDIA_CONFIG: dict[str, Any] = {
     "timeout": 240,
 }
 
-HIGH_MATCH_THRESHOLD = 0.80
+HIGH_MATCH_THRESHOLD = 0.50
 
 
 def _require_fitz():
@@ -226,6 +238,76 @@ def _normalize_high_matches(out_obj: dict[str, Any], threshold: float = HIGH_MAT
     return out_obj
 
 
+def build_pdf(out_obj: dict[str, Any], student_id: str) -> Path:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    pdf_path = OUTPUT_DIR / f"{student_id}.pdf"
+    
+    doc = SimpleDocTemplate(
+        str(pdf_path),
+        pagesize=A4,
+        rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "TitleStyle", parent=styles["Title"], fontName="Helvetica-Bold",
+        fontSize=24, textColor=UCAR_BLUE, spaceAfter=30
+    )
+    subtitle_style = ParagraphStyle(
+        "SubtitleStyle", parent=styles["Heading2"], fontName="Helvetica-Bold",
+        fontSize=14, textColor=UCAR_GOLD, alignment=1, spaceAfter=20
+    )
+    normal_style = ParagraphStyle(
+        "NormalStyle", parent=styles["Normal"], fontName="Helvetica",
+        fontSize=11, leading=15, spaceAfter=12
+    )
+    bold_style = ParagraphStyle(
+        "BoldStyle", parent=styles["Normal"], fontName="Helvetica-Bold",
+        fontSize=12, leading=16, spaceAfter=12, textColor=UCAR_BLUE
+    )
+
+    story = []
+
+    if LOGO_PATH.exists():
+        im = RLImage(str(LOGO_PATH), width=2*inch, height=1*inch)
+        story.append(im)
+        story.append(Spacer(1, 0.2*inch))
+
+    story.append(Paragraph("OPPORTUNITY ADVISORY REPORT", title_style))
+    story.append(Paragraph("University Consortium for Academic Resources (UCAR)", subtitle_style))
+    story.append(Spacer(1, 0.3*inch))
+
+    story.append(Paragraph(f"<b>Student ID:</b> {student_id}", normal_style))
+    
+    # Check if student name is available
+    first_name = out_obj.get("student_profile", {}).get("first_name", out_obj.get("first_name", ""))
+    last_name = out_obj.get("student_profile", {}).get("last_name", out_obj.get("last_name", ""))
+    if first_name or last_name:
+        story.append(Paragraph(f"<b>Student Name:</b> {first_name} {last_name}", normal_style))
+    
+    generated_at = out_obj.get("generated_at", datetime.now().isoformat(timespec="seconds"))
+    story.append(Paragraph(f"<b>Generated On:</b> {generated_at}", normal_style))
+    story.append(Spacer(1, 0.4*inch))
+
+    recs = out_obj.get("recommended_programs", [])
+    if not recs:
+        story.append(Paragraph("No opportunities matched the student's profile above the threshold.", normal_style))
+    else:
+        for i, rec in enumerate(recs):
+            title = rec.get("title", "Unknown Opportunity")
+            cat = rec.get("category", "Other")
+            score = rec.get("match_score", 0)
+            reason = rec.get("reason", "No reason provided.")
+            
+            story.append(Paragraph(f"{i+1}. {title} ({cat})", bold_style))
+            story.append(Paragraph(f"<b>Match Score:</b> {score * 100:.1f}%", normal_style))
+            story.append(Paragraph(f"<b>Reason:</b> {reason}", normal_style))
+            story.append(Spacer(1, 0.2*inch))
+
+    doc.build(story)
+    return pdf_path
+
+
 def generate_recommendation(
     *,
     student_id: str,
@@ -323,6 +405,10 @@ def generate_recommendation(
 
     if verbose:
         print(f"\nSaved JSON recommendation to: {final_out}")
+
+    pdf_path = build_pdf(out_obj, student_id)
+    out_obj["pdf_path"] = str(pdf_path)
+    out_obj["download_url"] = f"/api/document/{student_id}"
 
     return out_obj
 

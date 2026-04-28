@@ -15,7 +15,7 @@ Endpoints:
 
 import json, sys, uuid, threading
 from pathlib import Path
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, send_file
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -23,7 +23,7 @@ from employment_loader import (
     validate_and_enrich, build_sample_kpi,
     PROFESSOR_SALARY, POSTDOC_SALARY, TARGET_RATIO, CRITICAL_RATIO
 )
-from report_generator import generate_report, REPORTS_DIR
+from report_generator import generate_report, REPORTS_DIR, OUTPUT_DIR
 
 app = Flask(__name__)
 
@@ -201,6 +201,43 @@ def get_report(report_id):
     })
 
 
+@app.route("/api/document/<report_id>", methods=["GET"])
+def download_document(report_id):
+    """Serve the generated PDF report for download."""
+    pdf_path = OUTPUT_DIR / f"{report_id}.pdf"
+    if not pdf_path.exists():
+        return jsonify({"error": f"PDF for report '{report_id}' not found."}), 404
+    return send_file(pdf_path, as_attachment=True)
+
+
+@app.route("/api/reports/<report_id>/metrics", methods=["GET"])
+def get_report_metrics(report_id):
+    """Parses the employment report text to extract key workforce metrics."""
+    import re
+    report_path = REPORTS_DIR / f"{report_id}.txt"
+    if not report_path.exists():
+        return jsonify({"error": f"Report '{report_id}' not found."}), 404
+    content = report_path.read_text(encoding="utf-8")
+    metrics = {
+        "total_professors": 0,
+        "total_students": 0,
+        "overall_ratio": 0.0,
+        "female_percentage": 0.0,
+        "warnings_count": content.upper().count("WARNING:"),
+        "actions_count": content.upper().count("ACTION:"),
+        "is_fallback": "FALLBACK" in content.upper()
+    }
+    m = re.search(r"Total professors:\s*([\d]+)", content)
+    if m: metrics["total_professors"] = int(m.group(1))
+    m = re.search(r"Total students:\s*([\d,]+)", content)
+    if m: metrics["total_students"] = int(m.group(1).replace(",", ""))
+    m = re.search(r"Overall ratio:\s*([\d\.]+)", content)
+    if m: metrics["overall_ratio"] = float(m.group(1))
+    m = re.search(r"Female professors:\s*\d+\s*\(([\d\.]+)%\)", content)
+    if m: metrics["female_percentage"] = float(m.group(1))
+    return jsonify(metrics)
+
+
 if __name__ == "__main__":
     print("Starting UCAR Equitable Employment Agent API on port 5052...")
     print("Endpoints:")
@@ -212,4 +249,6 @@ if __name__ == "__main__":
     print("  GET  /api/jobs/<job_id>     -> poll for result")
     print("  GET  /api/reports")
     print("  GET  /api/reports/<report_id>")
+    print("  GET  /api/reports/<report_id>/metrics")
+    print("  GET  /api/document/<report_id>  -> download PDF")
     app.run(host="0.0.0.0", port=5052, debug=True)

@@ -7,8 +7,11 @@ import { useUIStore } from "@/stores/uiStore";
 import {
   BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from "recharts";
-import { Sparkles, Globe2, Building2, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
+import { Sparkles, Globe2, Building2, TrendingUp, TrendingDown, AlertTriangle, CheckCircle2, RefreshCw, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAgentTask } from "@/hooks/useAgentTask";
+import { useEquitableEmploymentAPI } from "@/hooks/useEquitableEmploymentAPI";
+import ReactMarkdown from "react-markdown";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/superadmin/dashboard")({
@@ -34,8 +37,31 @@ const AI_INSIGHTS = [
 
 function SuperAdminDashboard() {
   const openCopilot = useUIStore((s) => s.openCopilot);
+  const { submitTask } = useAgentTask();
+  const { evaluateAsMarkdown } = useEquitableEmploymentAPI();
+  const [advisorLoading, setAdvisorLoading] = useState(false);
+  const [advisorOutput, setAdvisorOutput] = useState<string>("");
+
   const totalEnrolled = 30620;
   const atRisk = universityFinancials.filter(u => u.status === "at risk" || u.status === "critical").length;
+
+  const handleEmploymentAgent = async () => {
+    setAdvisorLoading(true);
+    setAdvisorOutput("");
+    openCopilot(); // Opens the side panel
+
+    await submitTask({
+      type: "analytics_agent",
+      description: "Évaluation de l'Équité d'Emploi (Equitable Employment Agent)",
+      payload: { source: "equitable_employment_agent", institution: "Réseau UCAR" },
+      externalRun: async () => {
+        const output = await evaluateAsMarkdown();
+        setAdvisorOutput(output);
+        return output;
+      }
+    });
+    setAdvisorLoading(false);
+  };
 
   return (
     <div className="space-y-6">
@@ -45,11 +71,26 @@ function SuperAdminDashboard() {
         description="Pilotage centralisé de l'Université de Carthage : tous établissements, toutes métriques."
         actions={
           <div className="flex gap-2">
+            <Button onClick={handleEmploymentAgent} disabled={advisorLoading} variant="outline" className="border-gold/40 gap-2">
+              <Sparkles className="size-4 text-gold" />
+              Tâche Agent: Équité d'emploi
+            </Button>
             <Button variant="outline" className="gap-2"><RefreshCw className="size-4" />Sync données</Button>
             <Button onClick={openCopilot} variant="outline" className="border-gold/40 gap-2"><Sparkles className="size-4 text-gold" />IA Copilot</Button>
           </div>
         }
       />
+
+      {advisorOutput && (
+        <Section
+          title="Rapport de l'Agent d'Équité d'Emploi"
+          description="Résultat généré par l'API Python d'analyse de la masse salariale"
+        >
+          <div className="prose prose-sm max-w-none rounded-lg border border-border bg-muted/30 p-4 whitespace-pre-wrap">
+            <ReactMarkdown>{advisorOutput}</ReactMarkdown>
+          </div>
+        </Section>
+      )}
 
       {/* Hero */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-navy via-[#0d2654] to-navy/60 border border-navy/40 px-6 py-7 text-white">
@@ -185,6 +226,39 @@ function SuperAdminDashboard() {
               ))}
             </tbody>
           </table>
+        </div>
+      </Section>
+
+      {/* ESG Dashboard embedded section */}
+      <Section title="ESG / CSR Energy Consumption & Carbon Footprint" description="Tableau de bord d'analyse environnementale et bilans carbones. Données issues du modèle IA local.">
+        <div className="grid gap-6 lg:grid-cols-4">
+          <div className="lg:col-span-3 rounded-xl border border-border bg-card overflow-hidden h-[650px] shadow-sm">
+            <iframe src="/esg_dashboard.html" className="w-full h-full border-0" title="ESG Environmental Dashboard" />
+          </div>
+          <div className="lg:col-span-1 flex flex-col gap-4">
+            <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Leaf className="size-4 text-success" />
+                <h3 className="font-semibold text-sm">Advisory Assessment</h3>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Le modèle environnemental détecte une hausse de 12% de la consommation énergétique sur le réseau UCAR. 
+                L'installation de panneaux solaires permettrait une réduction de 20% de l'empreinte carbone globale d'ici 2026.
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="size-4 text-warning" />
+                <h3 className="font-semibold text-sm">Alerte Déchets</h3>
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Les indicateurs de tri sélectif montrent une baisse d'efficacité. Recommandation: relancer la campagne de sensibilisation inter-établissements.
+              </p>
+            </div>
+            <Button variant="outline" className="w-full gap-2 mt-auto">
+              Télécharger les données CSV
+            </Button>
+          </div>
         </div>
       </Section>
     </div>

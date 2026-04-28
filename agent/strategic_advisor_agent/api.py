@@ -13,13 +13,15 @@ Endpoints:
 """
 
 import json, sys, uuid, threading
+import json, sys, uuid, threading, os
 from pathlib import Path
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, send_file
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from kpi_loader import validate_and_enrich, build_sample_kpi
-from report_generator import generate_report, REPORTS_DIR
+from kpi_loader import validate_and_enrich, build_sample_kpi
+from report_generator import generate_report, REPORTS_DIR, OUTPUT_DIR
 
 app = Flask(__name__)
 
@@ -172,6 +174,60 @@ def get_report(report_id):
         "warnings_count": content.upper().count("WARNING:"),
         "insights_count": content.upper().count("INSIGHT:")
     })
+
+@app.route("/api/reports/<report_id>/metrics", methods=["GET"])
+def get_report_metrics(report_id):
+    """Parses the report text to extract key performance metrics."""
+    report_path = REPORTS_DIR / f"{report_id}.txt"
+    if not report_path.exists():
+        return jsonify({"error": f"Report '{report_id}' not found."}), 404
+    
+    with open(report_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    metrics = {
+        "overall_success": 0,
+        "budget_utilization": 0,
+        "total_budget": 0,
+        "surplus": 0,
+        "critical_fields": [],
+        "top_performing_inst": "N/A"
+    }
+
+    import re
+    # Extract success rate
+    success_match = re.search(r"overall success rate is ([\d\.]+)%", content)
+    if success_match: metrics["overall_success"] = float(success_match.group(1))
+
+    # Extract budget utilization
+    util_match = re.search(r"overall budget utilization stands at ([\d\.]+)%", content)
+    if util_match: metrics["budget_utilization"] = float(util_match.group(1))
+
+    # Extract total budget
+    budget_match = re.search(r"total institutional budget of ([\d,]+)", content)
+    if budget_match: metrics["total_budget"] = int(budget_match.group(1).replace(",", ""))
+
+    # Extract surplus
+    surplus_match = re.search(r"leaving a surplus of ([\d,]+)", content)
+    if surplus_match: metrics["surplus"] = int(surplus_match.group(1).replace(",", ""))
+
+    # Extract top performer
+    top_inst_match = re.search(r"Institute (\w) is the top performer", content)
+    if top_inst_match: metrics["top_performing_inst"] = f"Institute {top_inst_match.group(1)}"
+
+    # Critical fields
+    if "Mathematics" in content and "critical" in content.lower(): metrics["critical_fields"].append("Mathematics")
+    if "Physics" in content and "critical" in content.lower(): metrics["critical_fields"].append("Physics")
+
+    return jsonify(metrics)
+
+@app.route("/api/document/<report_id>", methods=["GET"])
+def download_document(report_id):
+    """Serve the generated PDF report."""
+    pdf_path = OUTPUT_DIR / f"{report_id}.pdf"
+    if not pdf_path.exists():
+        return jsonify({"error": f"PDF for report '{report_id}' not found."}), 404
+    return send_file(pdf_path, as_attachment=True)
 
 
 if __name__ == "__main__":

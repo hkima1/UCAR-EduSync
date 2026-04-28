@@ -70,6 +70,16 @@ function migrate(db) {
       FOREIGN KEY (user_id) REFERENCES users(id),
       FOREIGN KEY (profile_category_id) REFERENCES profile_categories(id)
     );
+
+    CREATE TABLE IF NOT EXISTS security_logs (
+      id TEXT PRIMARY KEY,
+      event_type TEXT NOT NULL,
+      user_id TEXT,
+      ip_address TEXT,
+      status TEXT NOT NULL,
+      details TEXT,
+      timestamp TEXT DEFAULT (datetime('now'))
+    );
   `);
 
   // ── Live migration: add google_id column if it doesn't exist yet ──────────
@@ -154,6 +164,39 @@ function migrate(db) {
       }
       console.log('✓ Seeded default UCAR admin (solaymen.tlili@enstab.ucar.tn)');
     }
+  }
+
+  // Seed mock security logs for Grafana monitoring
+  const logCount = db.prepare('SELECT COUNT(*) as c FROM security_logs').get().c;
+  if (logCount === 0) {
+    const insertLog = db.prepare("INSERT INTO security_logs (id, event_type, user_id, ip_address, status, details, timestamp) VALUES (?, ?, ?, ?, ?, ?, datetime('now', ?))");
+    
+    // Generate some mock logs spread over the last 24 hours
+    const logs = [];
+    const eventTypes = ['login_attempt', 'fraud_alert', 'unauthorized_access', 'password_reset', 'data_export'];
+    
+    for (let i = 0; i < 50; i++) {
+      const isFraud = Math.random() > 0.8;
+      const type = isFraud ? 'fraud_alert' : eventTypes[Math.floor(Math.random() * eventTypes.length)];
+      const status = (type === 'fraud_alert' || type === 'unauthorized_access' || Math.random() > 0.8) ? 'failed' : 'success';
+      const timeOffset = `-${Math.floor(Math.random() * 24)} hours`;
+      
+      logs.push({
+        id: uuidv4(),
+        event_type: type,
+        user_id: `user-${Math.floor(Math.random() * 100)}`,
+        ip_address: `192.168.1.${Math.floor(Math.random() * 255)}`,
+        status: status,
+        details: isFraud ? 'Suspicious multiple login attempts detected' : 'Standard operation',
+        timeOffset: timeOffset
+      });
+    }
+
+    const insertMany = db.transaction((items) => {
+      for (const log of items) insertLog.run(log.id, log.event_type, log.user_id, log.ip_address, log.status, log.details, log.timeOffset);
+    });
+    insertMany(logs);
+    console.log('✓ Seeded mock security logs for Grafana monitoring');
   }
 }
 

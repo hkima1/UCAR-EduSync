@@ -6,7 +6,7 @@ import requests
 import difflib
 
 # Configuration for NVIDIA NIM - google/gemma-4-31b-it
-NVIDIA_API_KEY = "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"
+NVIDIA_API_KEY = "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"
 INVOKE_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 MODEL_NAME = "google/gemma-4-31b-it"
 

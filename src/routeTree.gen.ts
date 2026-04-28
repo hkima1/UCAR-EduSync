@@ -9,11 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as TeacherRouteImport } from './routes/teacher'
 import { Route as SuperadminRouteImport } from './routes/superadmin'
 import { Route as StudentRouteImport } from './routes/student'
-import { Route as RegisterRouteImport } from './routes/register'
 import { Route as DirectorRouteImport } from './routes/director'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -35,6 +33,7 @@ import { Route as SuperadminUsersRouteImport } from './routes/superadmin.users'
 import { Route as SuperadminStrategicRouteImport } from './routes/superadmin.strategic'
 import { Route as SuperadminPredictionsRouteImport } from './routes/superadmin.predictions'
 import { Route as SuperadminOffersRouteImport } from './routes/superadmin.offers'
+import { Route as SuperadminMonitoringRouteImport } from './routes/superadmin.monitoring'
 import { Route as SuperadminMessagesRouteImport } from './routes/superadmin.messages'
 import { Route as SuperadminInstitutionsRouteImport } from './routes/superadmin.institutions'
 import { Route as SuperadminFinancialRouteImport } from './routes/superadmin.financial'
@@ -74,11 +73,6 @@ import { Route as AdminEsgRouteImport } from './routes/admin.esg'
 import { Route as AdminDemandsRouteImport } from './routes/admin.demands'
 import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 
-const VerifyEmailRoute = VerifyEmailRouteImport.update({
-  id: '/verify-email',
-  path: '/verify-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const TeacherRoute = TeacherRouteImport.update({
   id: '/teacher',
   path: '/teacher',
@@ -92,11 +86,6 @@ const SuperadminRoute = SuperadminRouteImport.update({
 const StudentRoute = StudentRouteImport.update({
   id: '/student',
   path: '/student',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DirectorRoute = DirectorRouteImport.update({
@@ -202,6 +191,11 @@ const SuperadminPredictionsRoute = SuperadminPredictionsRouteImport.update({
 const SuperadminOffersRoute = SuperadminOffersRouteImport.update({
   id: '/offers',
   path: '/offers',
+  getParentRoute: () => SuperadminRoute,
+} as any)
+const SuperadminMonitoringRoute = SuperadminMonitoringRouteImport.update({
+  id: '/monitoring',
+  path: '/monitoring',
   getParentRoute: () => SuperadminRoute,
 } as any)
 const SuperadminMessagesRoute = SuperadminMessagesRouteImport.update({
@@ -400,11 +394,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/director': typeof DirectorRouteWithChildren
-  '/register': typeof RegisterRoute
   '/student': typeof StudentRouteWithChildren
   '/superadmin': typeof SuperadminRouteWithChildren
   '/teacher': typeof TeacherRouteWithChildren
-  '/verify-email': typeof VerifyEmailRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/demands': typeof AdminDemandsRoute
   '/admin/esg': typeof AdminEsgRoute
@@ -443,6 +435,7 @@ export interface FileRoutesByFullPath {
   '/superadmin/financial': typeof SuperadminFinancialRoute
   '/superadmin/institutions': typeof SuperadminInstitutionsRoute
   '/superadmin/messages': typeof SuperadminMessagesRoute
+  '/superadmin/monitoring': typeof SuperadminMonitoringRoute
   '/superadmin/offers': typeof SuperadminOffersRoute
   '/superadmin/predictions': typeof SuperadminPredictionsRoute
   '/superadmin/strategic': typeof SuperadminStrategicRoute
@@ -464,8 +457,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/register': typeof RegisterRoute
-  '/verify-email': typeof VerifyEmailRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/demands': typeof AdminDemandsRoute
   '/admin/esg': typeof AdminEsgRoute
@@ -504,6 +495,7 @@ export interface FileRoutesByTo {
   '/superadmin/financial': typeof SuperadminFinancialRoute
   '/superadmin/institutions': typeof SuperadminInstitutionsRoute
   '/superadmin/messages': typeof SuperadminMessagesRoute
+  '/superadmin/monitoring': typeof SuperadminMonitoringRoute
   '/superadmin/offers': typeof SuperadminOffersRoute
   '/superadmin/predictions': typeof SuperadminPredictionsRoute
   '/superadmin/strategic': typeof SuperadminStrategicRoute
@@ -528,11 +520,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/director': typeof DirectorRouteWithChildren
-  '/register': typeof RegisterRoute
   '/student': typeof StudentRouteWithChildren
   '/superadmin': typeof SuperadminRouteWithChildren
   '/teacher': typeof TeacherRouteWithChildren
-  '/verify-email': typeof VerifyEmailRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/demands': typeof AdminDemandsRoute
   '/admin/esg': typeof AdminEsgRoute
@@ -571,6 +561,7 @@ export interface FileRoutesById {
   '/superadmin/financial': typeof SuperadminFinancialRoute
   '/superadmin/institutions': typeof SuperadminInstitutionsRoute
   '/superadmin/messages': typeof SuperadminMessagesRoute
+  '/superadmin/monitoring': typeof SuperadminMonitoringRoute
   '/superadmin/offers': typeof SuperadminOffersRoute
   '/superadmin/predictions': typeof SuperadminPredictionsRoute
   '/superadmin/strategic': typeof SuperadminStrategicRoute
@@ -596,11 +587,9 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/director'
-    | '/register'
     | '/student'
     | '/superadmin'
     | '/teacher'
-    | '/verify-email'
     | '/admin/dashboard'
     | '/admin/demands'
     | '/admin/esg'
@@ -639,6 +628,7 @@ export interface FileRouteTypes {
     | '/superadmin/financial'
     | '/superadmin/institutions'
     | '/superadmin/messages'
+    | '/superadmin/monitoring'
     | '/superadmin/offers'
     | '/superadmin/predictions'
     | '/superadmin/strategic'
@@ -660,8 +650,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/register'
-    | '/verify-email'
     | '/admin/dashboard'
     | '/admin/demands'
     | '/admin/esg'
@@ -700,6 +688,7 @@ export interface FileRouteTypes {
     | '/superadmin/financial'
     | '/superadmin/institutions'
     | '/superadmin/messages'
+    | '/superadmin/monitoring'
     | '/superadmin/offers'
     | '/superadmin/predictions'
     | '/superadmin/strategic'
@@ -723,11 +712,9 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/director'
-    | '/register'
     | '/student'
     | '/superadmin'
     | '/teacher'
-    | '/verify-email'
     | '/admin/dashboard'
     | '/admin/demands'
     | '/admin/esg'
@@ -766,6 +753,7 @@ export interface FileRouteTypes {
     | '/superadmin/financial'
     | '/superadmin/institutions'
     | '/superadmin/messages'
+    | '/superadmin/monitoring'
     | '/superadmin/offers'
     | '/superadmin/predictions'
     | '/superadmin/strategic'
@@ -790,22 +778,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   DirectorRoute: typeof DirectorRouteWithChildren
-  RegisterRoute: typeof RegisterRoute
   StudentRoute: typeof StudentRouteWithChildren
   SuperadminRoute: typeof SuperadminRouteWithChildren
   TeacherRoute: typeof TeacherRouteWithChildren
-  VerifyEmailRoute: typeof VerifyEmailRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/verify-email': {
-      id: '/verify-email'
-      path: '/verify-email'
-      fullPath: '/verify-email'
-      preLoaderRoute: typeof VerifyEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/teacher': {
       id: '/teacher'
       path: '/teacher'
@@ -825,13 +804,6 @@ declare module '@tanstack/react-router' {
       path: '/student'
       fullPath: '/student'
       preLoaderRoute: typeof StudentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/director': {
@@ -979,6 +951,13 @@ declare module '@tanstack/react-router' {
       path: '/offers'
       fullPath: '/superadmin/offers'
       preLoaderRoute: typeof SuperadminOffersRouteImport
+      parentRoute: typeof SuperadminRoute
+    }
+    '/superadmin/monitoring': {
+      id: '/superadmin/monitoring'
+      path: '/monitoring'
+      fullPath: '/superadmin/monitoring'
+      preLoaderRoute: typeof SuperadminMonitoringRouteImport
       parentRoute: typeof SuperadminRoute
     }
     '/superadmin/messages': {
@@ -1352,6 +1331,7 @@ interface SuperadminRouteChildren {
   SuperadminFinancialRoute: typeof SuperadminFinancialRoute
   SuperadminInstitutionsRoute: typeof SuperadminInstitutionsRoute
   SuperadminMessagesRoute: typeof SuperadminMessagesRoute
+  SuperadminMonitoringRoute: typeof SuperadminMonitoringRoute
   SuperadminOffersRoute: typeof SuperadminOffersRoute
   SuperadminPredictionsRoute: typeof SuperadminPredictionsRoute
   SuperadminStrategicRoute: typeof SuperadminStrategicRoute
@@ -1368,6 +1348,7 @@ const SuperadminRouteChildren: SuperadminRouteChildren = {
   SuperadminFinancialRoute: SuperadminFinancialRoute,
   SuperadminInstitutionsRoute: SuperadminInstitutionsRoute,
   SuperadminMessagesRoute: SuperadminMessagesRoute,
+  SuperadminMonitoringRoute: SuperadminMonitoringRoute,
   SuperadminOffersRoute: SuperadminOffersRoute,
   SuperadminPredictionsRoute: SuperadminPredictionsRoute,
   SuperadminStrategicRoute: SuperadminStrategicRoute,
@@ -1412,11 +1393,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   DirectorRoute: DirectorRouteWithChildren,
-  RegisterRoute: RegisterRoute,
   StudentRoute: StudentRouteWithChildren,
   SuperadminRoute: SuperadminRouteWithChildren,
   TeacherRoute: TeacherRouteWithChildren,
-  VerifyEmailRoute: VerifyEmailRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore, type Role } from "@/stores/authStore";
 import { useState, useEffect, useCallback } from "react";
@@ -192,11 +191,15 @@ function LoginPage() {
 
   // ── UI ─────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex">
+    <div 
+      className="min-h-screen flex bg-cover bg-center relative"
+      style={{ backgroundImage: "url('/landing-bg.jpg')" }}
+    >
+      {/* Dark overlay for text legibility */}
+      <div className="absolute inset-0 bg-navy/80 mix-blend-multiply" />
 
       {/* Left panel — branding */}
-      <div className="hidden lg:flex lg:w-[45%] ucar-gradient-navy relative overflow-hidden flex-col justify-between p-10">
-        <div className="absolute inset-0 ucar-grid-bg opacity-30" />
+      <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden flex-col justify-between p-10 z-10">
         <div className="absolute -bottom-32 -right-32 size-[500px] rounded-full bg-white/5 blur-3xl" />
         <div className="absolute -top-20 -left-20 size-[400px] rounded-full bg-gold/10 blur-3xl" />
 
@@ -236,8 +239,9 @@ function LoginPage() {
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 bg-background">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-10 z-10">
+        <div className="w-full max-w-md bg-background/95 backdrop-blur-xl p-8 sm:p-10 rounded-3xl shadow-2xl border border-white/10 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold via-gold/50 to-transparent" />
 
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 mb-10">

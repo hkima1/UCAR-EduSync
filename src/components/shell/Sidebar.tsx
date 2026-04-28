@@ -93,6 +93,7 @@ const NAV: Record<Role, NavItem[]> = {
   ],
   super_admin: [
     { to: "/superadmin/dashboard", label: "Tableau de bord global", icon: Globe2 },
+    { to: "/superadmin/monitoring", label: "Monitoring Système", icon: ShieldAlert },
     { to: "/superadmin/institutions", label: "Établissements", icon: Building2 },
     { to: "/superadmin/employment-equity", label: "Équité d'emploi", icon: Scale },
     { to: "/superadmin/coordination", label: "Coordination", icon: Megaphone },
@@ -107,6 +108,7 @@ const NAV: Record<Role, NavItem[]> = {
   ],
   ucar_admin: [
     { to: "/superadmin/dashboard", label: "Tableau de bord global", icon: Globe2 },
+    { to: "/superadmin/monitoring", label: "Monitoring Système", icon: ShieldAlert },
     { to: "/superadmin/institutions", label: "Établissements", icon: Building2 },
     { to: "/superadmin/employment-equity", label: "Équité d'emploi", icon: Scale },
     { to: "/superadmin/coordination", label: "Coordination", icon: Megaphone },
